@@ -1,0 +1,65 @@
+# Rust
+/target/
+**/*.rs.bk
+# Cargo.lock is committed: this crate builds a final artifact (cdylib), not a library.
+
+# Secrets / runtime — never commit
+*.pem
+clientpatch.local.toml
+clientpatch.log
+clientpatch/logs/
+
+# Build/deploy bundle + game-derived langpack data — never commit
+/dist/
+langpacks/
+
+# OS / editor
+Thumbs.db
+.DS_Store
+.vscode/
+.idea/
+
+# dotnet build artifacts
+tools/smokeplugin/bin/
+tools/smokeplugin/obj/
+
+# Reference assemblies placed locally to build the smoke plugin (not source)
+tools/smokeplugin/lib/
+manager/**/bin/
+manager/**/obj/
+manager/artifacts/
+
+# Local tools, game captures, runtime state and IDE/session caches
+/tools/interopgen/tools/
+/.superpowers/
+.vs/
+*.user
+*.suo
+*.log
+*.dmp
+*.pdb
+*.bk
+*.bak
+/.env
+/.env.*
+/clientpatch/
+/.clientpatch-backups/
+*.pfx
+*.p12
+*.key
+
+# Accidental game/deployment copies at the repository root
+/version.dll
+/clientpatch.dll
+/manager.exe
+/doorstop.dll
+/winhttp.dll
+/doorstop_config.ini
+/.doorstop_version
+/GameAssembly.dll*
+/global-metadata.dat
+/HeavenBurnsRed*.exe
+/HeavenBurnsRed_Data/
+/BepInEx/
+/dotnet/
+/interop/

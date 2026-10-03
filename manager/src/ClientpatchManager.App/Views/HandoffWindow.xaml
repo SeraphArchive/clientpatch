@@ -1,0 +1,65 @@
+<ui:FluentWindow x:Class="ClientpatchManager.App.Views.HandoffWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+                 d:DataContext="{d:DesignInstance Type=vm:HandoffViewModel}"
+                 mc:Ignorable="d"
+                 Title="{Binding Title}"
+                 Width="640" Height="520"
+                 MinWidth="520" MinHeight="420"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="{Binding Title}" Background="Transparent">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="Fire24" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <!-- No outer scroller. The log grows from one line and then stops at the
+             space left under the steps, so the default window never gains a second bar. -->
+        <Grid Grid.Row="1" Margin="28,20">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+                <ui:ProgressRing IsIndeterminate="True" Width="20" Height="20"
+                                 VerticalAlignment="Center" Margin="0,0,10,0"
+                                 Visibility="{Binding IsRunning, Converter={StaticResource BoolToVisibility}}" />
+                <TextBlock Text="{Binding StatusText}" FontSize="16" FontWeight="Medium"
+                           Foreground="{DynamicResource TextFillColorPrimaryBrush}"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <ItemsControl Grid.Row="1" ItemsSource="{Binding Steps}"
+                          ItemTemplate="{StaticResource InteropStepTemplate}" />
+
+            <Grid Grid.Row="2" x:Name="ConsoleSlot" Margin="0,12,0,0">
+                <ui:Card Padding="0" VerticalAlignment="Top"
+                         MaxHeight="{Binding ActualHeight, ElementName=ConsoleSlot}">
+                    <ScrollViewer x:Name="ConsoleScroller" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <ui:TextBox x:Name="ConsoleBox" Text="{Binding ConsoleText, Mode=OneWay}" IsReadOnly="True"
+                                 FontFamily="Cascadia Code, Consolas" FontSize="12" Padding="12,10"
+                                 TextWrapping="Wrap"
+                                 TextChanged="ConsoleBox_TextChanged" />
+                    </ScrollViewer>
+                </ui:Card>
+            </Grid>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

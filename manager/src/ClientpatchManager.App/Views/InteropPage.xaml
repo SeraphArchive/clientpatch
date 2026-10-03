@@ -1,0 +1,61 @@
+<Page x:Class="ClientpatchManager.App.Views.InteropPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+      d:DataContext="{d:DesignInstance Type=vm:InteropViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      ScrollViewer.CanContentScroll="False"
+      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <ScrollViewer Padding="32,28" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <ui:TextBlock Text="{Binding [interopTitle]}" FontTypography="Title" Margin="0,0,0,22" />
+
+            <!-- Currency banner (warning when outdated, success when current) -->
+            <ui:InfoBar IsOpen="True" IsClosable="False" Message="{Binding BannerText}" Margin="0,0,0,14">
+                <ui:InfoBar.Style>
+                    <Style TargetType="ui:InfoBar" BasedOn="{StaticResource {x:Type ui:InfoBar}}">
+                        <Setter Property="Severity" Value="Warning" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                                <Setter Property="Severity" Value="Success" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </ui:InfoBar.Style>
+            </ui:InfoBar>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,14">
+                <ui:Button Content="{Binding [interopCheck]}" Command="{Binding CheckCommand}" Margin="0,0,8,0" />
+                <ui:Button Appearance="Primary" Content="{Binding GenerateButtonText}"
+                           Command="{Binding GenerateCommand}" />
+                <ui:ProgressRing IsIndeterminate="True" Width="18" Height="18" Margin="12,0,0,0"
+                                 VerticalAlignment="Center"
+                                 Visibility="{Binding IsGenerating, Converter={StaticResource BoolToVisibility}}" />
+            </StackPanel>
+
+            <!-- Three-step display -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Steps}"
+                                  ItemTemplate="{StaticResource InteropStepTemplate}" />
+
+                    <!-- Console (hidden until generation produces output) -->
+                    <ui:Card Padding="0" Margin="0,12,0,0" MaxHeight="180"
+                             Visibility="{Binding HasConsole, Converter={StaticResource BoolToVisibility}}">
+                        <ScrollViewer x:Name="ConsoleScroller" VerticalScrollBarVisibility="Auto">
+                            <ui:TextBox x:Name="ConsoleBox" Text="{Binding ConsoleText, Mode=OneWay}" IsReadOnly="True"
+                                     FontFamily="Cascadia Code, Consolas" FontSize="12" Padding="12,10"
+                                     TextWrapping="Wrap"
+                                     TextChanged="ConsoleBox_TextChanged" />
+                        </ScrollViewer>
+                    </ui:Card>
+                </StackPanel>
+            </ui:Card>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

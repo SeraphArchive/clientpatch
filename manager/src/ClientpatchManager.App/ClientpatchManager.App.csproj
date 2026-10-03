@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClientpatchManager.Core\ClientpatchManager.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="WPF-UI" Version="4.1.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <AssemblyName>manager</AssemblyName>
+    <!-- Stamped on the exe so "is this the new build?" is answerable from
+         Properties > Details; the SDK appends the git commit to Product version. -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <!-- Framework-dependent on purpose: the tool ships small and relies on the
+         .NET 10 Desktop Runtime being installed (the apphost points at the
+         download when missing). A self-contained build costs ~65 MB of runtime.
+         Single-file compression is self-contained-only, so it is off. -->
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <!-- DebugType=embedded covers only this project. ClientpatchManager.Core still
+       emits a portable pdb, and the SDK copies it into PublishDir. The brief forbids
+       touching Core, so its symbols are produced and then dropped here rather than
+       embedded. -->
+  <Target Name="DropPublishedPdbs" AfterTargets="Publish">
+    <ItemGroup>
+      <_Pdb Include="$(PublishDir)*.pdb" />
+    </ItemGroup>
+    <Delete Files="@(_Pdb)" />
+  </Target>
+
+</Project>

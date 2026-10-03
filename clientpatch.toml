@@ -1,0 +1,44 @@
+# Configuration template
+
+[loader]
+log = "clientpatch.log"
+
+[lilypad]
+enable = true
+api_base = "http://127.0.0.1:8443/"
+platform_base = "http://127.0.0.1:8443"
+signing = "noop" # noop | rsa
+server_public_key_pem = ""
+neutralize_debugger_flag = false
+
+[lilypad.report]
+enable = true
+
+[regredirect]
+enable = true
+suffix = "clientpatch"
+
+[titlebar]
+enable = true
+template = " — clientpatch → {api_host}"
+
+[steam]
+enable = true
+mode = "auto" # off | skip_restart | stub | auto
+ip_country = "JP"
+ui_language = "japanese"
+
+[interopdump]
+enable = false
+out_dir = "interop"
+force = false
+restore_handles = false
+
+[bepinex]
+enable = false
+root = "BepInEx"
+doorstop = "doorstop.dll"
+auto_download = true
+auto_generate = true
+launch_method = "steam"
+max_restarts = 2

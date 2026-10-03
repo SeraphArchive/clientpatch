@@ -1,0 +1,91 @@
+<Page x:Class="ClientpatchManager.App.Views.HomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+      d:DataContext="{d:DesignInstance Type=vm:HomeViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      ScrollViewer.CanContentScroll="False"
+      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <ScrollViewer Padding="32,28" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <ui:TextBlock Text="{Binding [homeTitle]}" FontTypography="Title" Margin="0,0,0,22" />
+
+            <!-- Status tiles -->
+            <UniformGrid Columns="2" Margin="0,0,0,14">
+                <ui:Card Margin="0,0,6,6">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [stGame]}" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding GameStatus}" FontWeight="SemiBold" FontSize="15" />
+                    </StackPanel>
+                </ui:Card>
+                <ui:Card Margin="6,0,0,6">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [stPatch]}" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding PatchVersion}" FontWeight="SemiBold" FontSize="15" />
+                    </StackPanel>
+                </ui:Card>
+                <ui:Card Margin="0,6,6,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [stServer]}" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding ServerStatus}" FontWeight="SemiBold" FontSize="15" />
+                    </StackPanel>
+                </ui:Card>
+                <ui:Card Margin="6,6,0,0">
+                    <StackPanel>
+                        <TextBlock Text="{Binding [stBuild]}" FontSize="12"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                        <TextBlock Text="{Binding BuildId}" FontWeight="Medium" FontFamily="Cascadia Code, Consolas"
+                                   FontSize="13" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </ui:Card>
+            </UniformGrid>
+
+            <!-- Launch card -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon Play24}"
+                                   Content="{Binding [launch]}" Command="{Binding LaunchCommand}"
+                                   MinWidth="160" />
+                        <ui:Button Icon="{ui:SymbolIcon ChevronDown24}" Command="{Binding ToggleLaunchMethodCommand}"
+                                   Margin="8,0,0,0" ToolTip="{Binding LaunchModeLabel}" />
+                        <ui:Button Content="{Binding [openFolder]}" Command="{Binding OpenFolderCommand}"
+                                   Margin="8,0,0,0" />
+                        <TextBlock Text="{Binding LaunchModeLabel}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" Margin="12,0,0,0" />
+                    </StackPanel>
+                    <ui:InfoBar Severity="Error" IsOpen="{Binding HasLaunchError}"
+                                Message="{Binding LaunchError}" Margin="0,10,0,0" IsClosable="False" />
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Module health -->
+            <ui:Card>
+                <StackPanel>
+                    <TextBlock Text="{Binding [healthTitle]}" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8" />
+                    <ItemsControl ItemsSource="{Binding Modules}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Margin="0,6">
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <ui:TextBlock HorizontalAlignment="Right" FontTypography="Caption"
+                                                  Text="{Binding StateText}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding [healthNote]}" FontSize="12" Margin="0,8,0,0"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Visibility="{Binding ShowHealthNote, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

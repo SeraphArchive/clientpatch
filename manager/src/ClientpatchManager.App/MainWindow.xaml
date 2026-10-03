@@ -1,0 +1,86 @@
+<ui:FluentWindow x:Class="ClientpatchManager.App.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 xmlns:views="clr-namespace:ClientpatchManager.App.Views"
+                 xmlns:local="clr-namespace:ClientpatchManager.App"
+                 mc:Ignorable="d"
+                 Title="{Binding AppTitle}"
+                 Width="1080" Height="720"
+                 MinWidth="820" MinHeight="560"
+                 WindowStartupLocation="CenterScreen"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Title bar: app name + window controls only (mode/language/theme live in Settings).
+             Transparent so it shares the window's Mica surface with the nav pane (mockup:
+             .titlebar has no background of its own); WPF-UI's default is an opaque dark brush. -->
+        <ui:TitleBar Grid.Row="0"
+                     x:Name="TitleBar"
+                     Background="Transparent"
+                     Title="{Binding AppTitle}">
+            <ui:TitleBar.Icon>
+                <ui:SymbolIcon Symbol="Fire24" />
+            </ui:TitleBar.Icon>
+        </ui:TitleBar>
+
+        <!-- Left NavigationView: six destinations + footer Settings. -->
+        <ui:NavigationView Grid.Row="1"
+                           x:Name="RootNavigation"
+                           PaneDisplayMode="Left"
+                           OpenPaneLength="224"
+                           IsBackButtonVisible="Collapsed"
+                           IsPaneToggleVisible="True"
+                           IsTopSeparatorVisible="False"
+                           IsFooterSeparatorVisible="False">
+            <ui:NavigationView.MenuItems>
+                <ui:NavigationViewItem x:Name="NavHome" TargetPageType="{x:Type views:HomePage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Home24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="NavUpdates" TargetPageType="{x:Type views:UpdatesPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="ArrowDownload24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="NavModules" TargetPageType="{x:Type views:ModulesPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Options24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="NavPlugins" TargetPageType="{x:Type views:PluginsPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="PuzzlePiece24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="NavInterop" TargetPageType="{x:Type views:InteropPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="WrenchScrewdriver24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+                <ui:NavigationViewItem x:Name="NavLogs" TargetPageType="{x:Type views:LogsPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="DocumentText24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.MenuItems>
+            <ui:NavigationView.FooterMenuItems>
+                <ui:NavigationViewItem x:Name="NavSettings" TargetPageType="{x:Type views:SettingsPage}">
+                    <ui:NavigationViewItem.Icon>
+                        <ui:SymbolIcon Symbol="Settings24" />
+                    </ui:NavigationViewItem.Icon>
+                </ui:NavigationViewItem>
+            </ui:NavigationView.FooterMenuItems>
+        </ui:NavigationView>
+    </Grid>
+</ui:FluentWindow>

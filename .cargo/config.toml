@@ -1,0 +1,4 @@
+# Cross-link the MSVC target with LLVM's lld-link (must be on PATH).
+# On Windows with the MSVC toolchain installed, remove/ignore this and link.exe is used.
+[target.x86_64-pc-windows-msvc]
+linker = "lld-link"

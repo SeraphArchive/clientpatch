@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="appTitle" xml:space="preserve">
+    <value>clientpatch manager</value>
+  </data>
+  <data name="navHome" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="navVersion" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="navModules" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="navPlugins" xml:space="preserve">
+    <value>BepInEx Plugins</value>
+  </data>
+  <data name="navInterop" xml:space="preserve">
+    <value>Interop</value>
+  </data>
+  <data name="navLogs" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="navSettings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="homeTitle" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="stGame" xml:space="preserve">
+    <value>Game</value>
+  </data>
+  <data name="stPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="stServer" xml:space="preserve">
+    <value>LilyPad</value>
+  </data>
+  <data name="stBuild" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="launch" xml:space="preserve">
+    <value>Launch game</value>
+  </data>
+  <data name="viaSteam" xml:space="preserve">
+    <value>Launch via Steam</value>
+  </data>
+  <data name="direct" xml:space="preserve">
+    <value>Launch directly</value>
+  </data>
+  <data name="openFolder" xml:space="preserve">
+    <value>Game folder</value>
+  </data>
+  <data name="healthTitle" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="hLilypad" xml:space="preserve">
+    <value>LilyPad redirect</value>
+  </data>
+  <data name="hSteam" xml:space="preserve">
+    <value>Steam bridge</value>
+  </data>
+  <data name="ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="off" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="verTitle" xml:space="preserve">
+    <value>Updates</value>
+  </data>
+  <data name="verCurrent" xml:space="preserve">
+    <value>Current</value>
+  </data>
+  <data name="verLatest" xml:space="preserve">
+    <value>Latest</value>
+  </data>
+  <data name="verChannel" xml:space="preserve">
+    <value>Channel</value>
+  </data>
+  <data name="chStable" xml:space="preserve">
+    <value>Stable</value>
+  </data>
+  <data name="chBeta" xml:space="preserve">
+    <value>Beta</value>
+  </data>
+  <data name="updateNow" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="upToDate" xml:space="preserve">
+    <value>Up to date</value>
+  </data>
+  <data name="needUpdate" xml:space="preserve">
+    <value>Update available</value>
+  </data>
+  <data name="compPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="compLang" xml:space="preserve">
+    <value>Language packs</value>
+  </data>
+  <data name="compBepin" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="bepinNote" xml:space="preserve">
+    <value>Managed when the bepinex module is on</value>
+  </data>
+  <data name="backupNote" xml:space="preserve">
+    <value>version.dll and config are backed up before every update</value>
+  </data>
+  <data name="rollback" xml:space="preserve">
+    <value>Roll back</value>
+  </data>
+  <data name="modTitle" xml:space="preserve">
+    <value>Modules</value>
+  </data>
+  <data name="tabForm" xml:space="preserve">
+    <value>Form</value>
+  </data>
+  <data name="tabToml" xml:space="preserve">
+    <value>TOML</value>
+  </data>
+  <data name="openInEditor" xml:space="preserve">
+    <value>Text editor</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="secLilypad" xml:space="preserve">
+    <value>LilyPad redirect</value>
+  </data>
+  <data name="fApi" xml:space="preserve">
+    <value>API base</value>
+  </data>
+  <data name="fPlatform" xml:space="preserve">
+    <value>Platform base</value>
+  </data>
+  <data name="fSigning" xml:space="preserve">
+    <value>Signing</value>
+  </data>
+  <data name="secSteam" xml:space="preserve">
+    <value>Steam bridge</value>
+  </data>
+  <data name="fSteamMode" xml:space="preserve">
+    <value>Mode</value>
+  </data>
+  <data name="fCountry" xml:space="preserve">
+    <value>Country</value>
+  </data>
+  <data name="fUiLang" xml:space="preserve">
+    <value>UI language</value>
+  </data>
+  <data name="secTitlebar" xml:space="preserve">
+    <value>Title bar marker</value>
+  </data>
+  <data name="secRedir" xml:space="preserve">
+    <value>Registry isolation</value>
+  </data>
+  <data name="plugTitle" xml:space="preserve">
+    <value>BepInEx Plugins</value>
+  </data>
+  <data name="plugScan" xml:space="preserve">
+    <value>Rescan</value>
+  </data>
+  <data name="plugOpen" xml:space="preserve">
+    <value>Plugins folder</value>
+  </data>
+  <data name="plugNeedBepin" xml:space="preserve">
+    <value>Requires the bepinex module</value>
+  </data>
+  <data name="interopTitle" xml:space="preserve">
+    <value>Interop</value>
+  </data>
+  <data name="interopOutdated" xml:space="preserve">
+    <value>Interop assemblies are outdated for the installed build</value>
+  </data>
+  <data name="interopCurrentFmt" xml:space="preserve">
+    <value>Interop assemblies current ({0}, {1} assemblies)</value>
+  </data>
+  <data name="interopCheck" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="interopGen" xml:space="preserve">
+    <value>Generate offline</value>
+  </data>
+  <data name="interopGenRun" xml:space="preserve">
+    <value>Generating</value>
+  </data>
+  <data name="stepUnpack" xml:space="preserve">
+    <value>senbei static unpack</value>
+  </data>
+  <data name="stepUnpackD" xml:space="preserve">
+    <value>Decrypt GameAssembly and metadata from disk</value>
+  </data>
+  <data name="stepDump" xml:space="preserve">
+    <value>Il2CppDumper</value>
+  </data>
+  <data name="stepDumpD" xml:space="preserve">
+    <value>Produce DummyDll with FieldOffset attributes</value>
+  </data>
+  <data name="stepGen" xml:space="preserve">
+    <value>Il2CppInterop.CLI</value>
+  </data>
+  <data name="stepGenD" xml:space="preserve">
+    <value>Generate interop assemblies</value>
+  </data>
+  <data name="logTitle" xml:space="preserve">
+    <value>Logs</value>
+  </data>
+  <data name="logClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="logOpenFile" xml:space="preserve">
+    <value>Log file</value>
+  </data>
+  <data name="logFollow" xml:space="preserve">
+    <value>Auto-scroll</value>
+  </data>
+  <data name="setTitle" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="setGamePath" xml:space="preserve">
+    <value>Game folder</value>
+  </data>
+  <data name="setFeed" xml:space="preserve">
+    <value>Release feed</value>
+  </data>
+  <data name="setLaunch" xml:space="preserve">
+    <value>Launch method</value>
+  </data>
+  <data name="setLang" xml:space="preserve">
+    <value>Interface language</value>
+  </data>
+  <data name="setTheme" xml:space="preserve">
+    <value>Theme</value>
+  </data>
+  <data name="setAuto" xml:space="preserve">
+    <value>Check for updates on launch</value>
+  </data>
+  <data name="setBackup" xml:space="preserve">
+    <value>Back up before changes</value>
+  </data>
+  <data name="thSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="thLight" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="thDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="langSystem" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="detected" xml:space="preserve">
+    <value>detected</value>
+  </data>
+  <data name="browse" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="statusNotDeployed" xml:space="preserve">
+    <value>Not deployed</value>
+  </data>
+  <data name="statusGameOnly" xml:space="preserve">
+    <value>Game only</value>
+  </data>
+  <data name="statusNotFound" xml:space="preserve">
+    <value>Not found</value>
+  </data>
+  <data name="valueUnknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="stServerV" xml:space="preserve">
+    <value>reachable</value>
+  </data>
+  <data name="tomlValid" xml:space="preserve">
+    <value>Valid</value>
+  </data>
+  <data name="serverUnreachable" xml:space="preserve">
+    <value>unreachable</value>
+  </data>
+  <data name="launchError" xml:space="preserve">
+    <value>Launch failed</value>
+  </data>
+  <data name="healthNote" xml:space="preserve">
+    <value>Status from config; no log yet</value>
+  </data>
+  <data name="verChecking" xml:space="preserve">
+    <value>Checking</value>
+  </data>
+  <data name="verError" xml:space="preserve">
+    <value>Release feed unreachable</value>
+  </data>
+  <data name="verNoBackups" xml:space="preserve">
+    <value>No backups yet</value>
+  </data>
+  <data name="modSaved" xml:space="preserve">
+    <value>Saved</value>
+  </data>
+  <data name="plugEmpty" xml:space="preserve">
+    <value>No plugins</value>
+  </data>
+  <data name="logEmpty" xml:space="preserve">
+    <value>No log file</value>
+  </data>
+  <data name="handoffTitle" xml:space="preserve">
+    <value>clientpatch interop setup</value>
+  </data>
+  <data name="handoffRunning" xml:space="preserve">
+    <value>Generating interop from the runtime dump</value>
+  </data>
+  <data name="handoffDone" xml:space="preserve">
+    <value>Interop generated</value>
+  </data>
+  <data name="handoffFailed" xml:space="preserve">
+    <value>Interop generation failed</value>
+  </data>
+  <data name="handoffRelaunching" xml:space="preserve">
+    <value>Restarting the game</value>
+  </data>
+  <data name="handoffNoGameDir" xml:space="preserve">
+    <value>Interop generated. Launch the game from the manager or Steam.</value>
+  </data>
+  <data name="stepInstall" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="stepInstallD" xml:space="preserve">
+    <value>Download and extract the mod platform</value>
+  </data>
+  <data name="stepRelaunch" xml:space="preserve">
+    <value>Restart the game</value>
+  </data>
+  <data name="stepRelaunchD" xml:space="preserve">
+    <value>Launch the game</value>
+  </data>
+  <data name="handoffPayload" xml:space="preserve">
+    <value>Installing BepInEx</value>
+  </data>
+  <data name="handoffPayloadFailed" xml:space="preserve">
+    <value>BepInEx install failed</value>
+  </data>
+  <data name="handoffRelaunchFailed" xml:space="preserve">
+    <value>Could not restart the game</value>
+  </data>
+  <data name="verNoReleases" xml:space="preserve">
+    <value>No releases in the feed</value>
+  </data>
+  <data name="verUpdating" xml:space="preserve">
+    <value>Updating</value>
+  </data>
+  <data name="fPublicKey" xml:space="preserve"><value>Server public key</value></data>
+  <data name="secInteropDump" xml:space="preserve"><value>Interop dump</value></data>
+  <data name="secReport" xml:space="preserve"><value>Version reporting</value></data>
+</root>

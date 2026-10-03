@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>disable</Nullable>
+    <AssemblyName>clientpatch-smoke</AssemblyName>
+    <RootNamespace>clientpatch_smoke</RootNamespace>
+  </PropertyGroup>
+  <!--
+    References resolve inside this repo. Place them before building:
+      BepInEx.*.dll, Il2CppInterop.Runtime.dll  <- BepInEx IL2CPP core, into lib\bepinex\
+      Il2Cppmscorlib.dll, UnityEngine.CoreModule.dll <- a generated interop set, into lib\interop\
+    (lib\ is gitignored; nothing here points outside the repo.)
+  -->
+  <ItemGroup>
+    <Reference Include="BepInEx.Core">
+      <HintPath>lib\bepinex\BepInEx.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx.Unity.IL2CPP">
+      <HintPath>lib\bepinex\BepInEx.Unity.IL2CPP.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2CppInterop.Runtime">
+      <HintPath>lib\bepinex\Il2CppInterop.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Il2Cppmscorlib">
+      <HintPath>lib\interop\Il2Cppmscorlib.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>lib\interop\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>

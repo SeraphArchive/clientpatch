@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="appTitle" xml:space="preserve">
+    <value>clientpatch 管理器</value>
+  </data>
+  <data name="navHome" xml:space="preserve">
+    <value>主页</value>
+  </data>
+  <data name="navVersion" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="navModules" xml:space="preserve">
+    <value>模块</value>
+  </data>
+  <data name="navPlugins" xml:space="preserve">
+    <value>BepInEx 插件</value>
+  </data>
+  <data name="navInterop" xml:space="preserve">
+    <value>互操作</value>
+  </data>
+  <data name="navLogs" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="navSettings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="homeTitle" xml:space="preserve">
+    <value>主页</value>
+  </data>
+  <data name="stGame" xml:space="preserve">
+    <value>游戏</value>
+  </data>
+  <data name="stPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="stServer" xml:space="preserve">
+    <value>LilyPad</value>
+  </data>
+  <data name="stBuild" xml:space="preserve">
+    <value>构建</value>
+  </data>
+  <data name="launch" xml:space="preserve">
+    <value>启动游戏</value>
+  </data>
+  <data name="viaSteam" xml:space="preserve">
+    <value>通过 Steam 启动</value>
+  </data>
+  <data name="direct" xml:space="preserve">
+    <value>直接启动</value>
+  </data>
+  <data name="openFolder" xml:space="preserve">
+    <value>游戏目录</value>
+  </data>
+  <data name="healthTitle" xml:space="preserve">
+    <value>模块状态</value>
+  </data>
+  <data name="hLilypad" xml:space="preserve">
+    <value>LilyPad 重定向</value>
+  </data>
+  <data name="hSteam" xml:space="preserve">
+    <value>Steam 桥接</value>
+  </data>
+  <data name="ok" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="off" xml:space="preserve">
+    <value>未启用</value>
+  </data>
+  <data name="verTitle" xml:space="preserve">
+    <value>版本</value>
+  </data>
+  <data name="verCurrent" xml:space="preserve">
+    <value>当前</value>
+  </data>
+  <data name="verLatest" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="verChannel" xml:space="preserve">
+    <value>通道</value>
+  </data>
+  <data name="chStable" xml:space="preserve">
+    <value>稳定</value>
+  </data>
+  <data name="chBeta" xml:space="preserve">
+    <value>测试</value>
+  </data>
+  <data name="updateNow" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="upToDate" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="needUpdate" xml:space="preserve">
+    <value>可更新</value>
+  </data>
+  <data name="compPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="compLang" xml:space="preserve">
+    <value>语言包</value>
+  </data>
+  <data name="compBepin" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="bepinNote" xml:space="preserve">
+    <value>启用 bepinex 模块时管理</value>
+  </data>
+  <data name="backupNote" xml:space="preserve">
+    <value>更新前自动备份 version.dll 与配置</value>
+  </data>
+  <data name="rollback" xml:space="preserve">
+    <value>回滚</value>
+  </data>
+  <data name="modTitle" xml:space="preserve">
+    <value>模块</value>
+  </data>
+  <data name="tabForm" xml:space="preserve">
+    <value>表单</value>
+  </data>
+  <data name="tabToml" xml:space="preserve">
+    <value>TOML</value>
+  </data>
+  <data name="openInEditor" xml:space="preserve">
+    <value>文本编辑器</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="secLilypad" xml:space="preserve">
+    <value>LilyPad 重定向</value>
+  </data>
+  <data name="fApi" xml:space="preserve">
+    <value>API 地址</value>
+  </data>
+  <data name="fPlatform" xml:space="preserve">
+    <value>平台地址</value>
+  </data>
+  <data name="fSigning" xml:space="preserve">
+    <value>签名</value>
+  </data>
+  <data name="secSteam" xml:space="preserve">
+    <value>Steam 桥接</value>
+  </data>
+  <data name="fSteamMode" xml:space="preserve">
+    <value>模式</value>
+  </data>
+  <data name="fCountry" xml:space="preserve">
+    <value>地区</value>
+  </data>
+  <data name="fUiLang" xml:space="preserve">
+    <value>界面语言</value>
+  </data>
+  <data name="secTitlebar" xml:space="preserve">
+    <value>标题栏标记</value>
+  </data>
+  <data name="secRedir" xml:space="preserve">
+    <value>注册表隔离</value>
+  </data>
+  <data name="plugTitle" xml:space="preserve">
+    <value>BepInEx 插件</value>
+  </data>
+  <data name="plugScan" xml:space="preserve">
+    <value>重新扫描</value>
+  </data>
+  <data name="plugOpen" xml:space="preserve">
+    <value>插件目录</value>
+  </data>
+  <data name="plugNeedBepin" xml:space="preserve">
+    <value>需要 bepinex 模块</value>
+  </data>
+  <data name="interopTitle" xml:space="preserve">
+    <value>互操作</value>
+  </data>
+  <data name="interopOutdated" xml:space="preserve">
+    <value>当前构建的互操作程序集已过期</value>
+  </data>
+  <data name="interopCurrentFmt" xml:space="preserve">
+    <value>互操作程序集最新（{0}，{1} 个）</value>
+  </data>
+  <data name="interopCheck" xml:space="preserve">
+    <value>检查</value>
+  </data>
+  <data name="interopGen" xml:space="preserve">
+    <value>离线生成</value>
+  </data>
+  <data name="interopGenRun" xml:space="preserve">
+    <value>生成中</value>
+  </data>
+  <data name="stepUnpack" xml:space="preserve">
+    <value>senbei 静态解包</value>
+  </data>
+  <data name="stepUnpackD" xml:space="preserve">
+    <value>从磁盘解密 GameAssembly 与 metadata</value>
+  </data>
+  <data name="stepDump" xml:space="preserve">
+    <value>Il2CppDumper</value>
+  </data>
+  <data name="stepDumpD" xml:space="preserve">
+    <value>生成带 FieldOffset 的 DummyDll</value>
+  </data>
+  <data name="stepGen" xml:space="preserve">
+    <value>Il2CppInterop.CLI</value>
+  </data>
+  <data name="stepGenD" xml:space="preserve">
+    <value>生成互操作程序集</value>
+  </data>
+  <data name="logTitle" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="logClear" xml:space="preserve">
+    <value>清空</value>
+  </data>
+  <data name="logOpenFile" xml:space="preserve">
+    <value>日志文件</value>
+  </data>
+  <data name="logFollow" xml:space="preserve">
+    <value>自动滚动</value>
+  </data>
+  <data name="setTitle" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="setGamePath" xml:space="preserve">
+    <value>游戏目录</value>
+  </data>
+  <data name="setFeed" xml:space="preserve">
+    <value>发布源</value>
+  </data>
+  <data name="setLaunch" xml:space="preserve">
+    <value>启动方式</value>
+  </data>
+  <data name="setLang" xml:space="preserve">
+    <value>界面语言</value>
+  </data>
+  <data name="setTheme" xml:space="preserve">
+    <value>主题</value>
+  </data>
+  <data name="setAuto" xml:space="preserve">
+    <value>启动时检查更新</value>
+  </data>
+  <data name="setBackup" xml:space="preserve">
+    <value>改动前备份</value>
+  </data>
+  <data name="thSystem" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="thLight" xml:space="preserve">
+    <value>浅色</value>
+  </data>
+  <data name="thDark" xml:space="preserve">
+    <value>深色</value>
+  </data>
+  <data name="langSystem" xml:space="preserve">
+    <value>跟随系统</value>
+  </data>
+  <data name="detected" xml:space="preserve">
+    <value>已检测</value>
+  </data>
+  <data name="browse" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="statusNotDeployed" xml:space="preserve">
+    <value>未部署</value>
+  </data>
+  <data name="statusGameOnly" xml:space="preserve">
+    <value>仅游戏</value>
+  </data>
+  <data name="statusNotFound" xml:space="preserve">
+    <value>未找到</value>
+  </data>
+  <data name="valueUnknown" xml:space="preserve">
+    <value>未知</value>
+  </data>
+  <data name="stServerV" xml:space="preserve">
+    <value>可连接</value>
+  </data>
+  <data name="tomlValid" xml:space="preserve">
+    <value>有效</value>
+  </data>
+  <data name="serverUnreachable" xml:space="preserve">
+    <value>无法连接</value>
+  </data>
+  <data name="launchError" xml:space="preserve">
+    <value>启动失败</value>
+  </data>
+  <data name="healthNote" xml:space="preserve">
+    <value>状态来自配置，尚无日志</value>
+  </data>
+  <data name="verChecking" xml:space="preserve">
+    <value>检查中</value>
+  </data>
+  <data name="verError" xml:space="preserve">
+    <value>无法连接发布源</value>
+  </data>
+  <data name="verNoBackups" xml:space="preserve">
+    <value>暂无备份</value>
+  </data>
+  <data name="modSaved" xml:space="preserve">
+    <value>已保存</value>
+  </data>
+  <data name="plugEmpty" xml:space="preserve">
+    <value>无插件</value>
+  </data>
+  <data name="logEmpty" xml:space="preserve">
+    <value>无日志文件</value>
+  </data>
+  <data name="handoffTitle" xml:space="preserve">
+    <value>clientpatch 互操作设置</value>
+  </data>
+  <data name="handoffRunning" xml:space="preserve">
+    <value>正在从运行时转储生成互操作</value>
+  </data>
+  <data name="handoffDone" xml:space="preserve">
+    <value>互操作已生成</value>
+  </data>
+  <data name="handoffFailed" xml:space="preserve">
+    <value>互操作生成失败</value>
+  </data>
+  <data name="handoffRelaunching" xml:space="preserve">
+    <value>正在重启游戏</value>
+  </data>
+  <data name="handoffNoGameDir" xml:space="preserve">
+    <value>互操作已生成。请从管理器或 Steam 启动游戏。</value>
+  </data>
+  <data name="stepInstall" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="stepInstallD" xml:space="preserve">
+    <value>下载并解压模组平台</value>
+  </data>
+  <data name="stepRelaunch" xml:space="preserve">
+    <value>重启游戏</value>
+  </data>
+  <data name="stepRelaunchD" xml:space="preserve">
+    <value>启动游戏</value>
+  </data>
+  <data name="handoffPayload" xml:space="preserve">
+    <value>正在安装 BepInEx</value>
+  </data>
+  <data name="handoffPayloadFailed" xml:space="preserve">
+    <value>BepInEx 安装失败</value>
+  </data>
+  <data name="handoffRelaunchFailed" xml:space="preserve">
+    <value>无法重启游戏</value>
+  </data>
+  <data name="verNoReleases" xml:space="preserve">
+    <value>发布源中没有可用版本</value>
+  </data>
+  <data name="verUpdating" xml:space="preserve">
+    <value>更新中</value>
+  </data>
+  <data name="fPublicKey" xml:space="preserve"><value>服务器公钥</value></data>
+  <data name="secInteropDump" xml:space="preserve"><value>Interop 转储</value></data>
+  <data name="secReport" xml:space="preserve"><value>版本报告</value></data>
+</root>
