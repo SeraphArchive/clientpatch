@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>clientpatch manager</title>
+<style>
+  :root{
+    --bg:#f3f3f3; --mica:linear-gradient(135deg,#eef1f6 0%,#e7ecf4 40%,#eae6f2 100%);
+    --card:#ffffffcc; --card-solid:#ffffff; --stroke:#00000014; --stroke-strong:#0000001f;
+    --text:#1a1a1a; --text-2:#5c5c5c; --text-3:#8a8a8a;
+    --accent:#0067c0; --accent-hover:#1975c5; --accent-soft:#0067c014;
+    --good:#0f7b0f; --warn:#9d5d00; --bad:#c42b1c;
+    --nav-w:224px; --radius:8px; --radius-lg:10px;
+    --mono:"Cascadia Code",Consolas,"SF Mono",monospace;
+    --sans:"Segoe UI Variable","Segoe UI","Microsoft YaHei UI","PingFang SC","Hiragino Sans","Malgun Gothic",system-ui,sans-serif;
+  }
+  html.dark{
+    --bg:#202020; --mica:linear-gradient(135deg,#26262b 0%,#212127 40%,#282430 100%);
+    --card:#2b2b2bcc; --card-solid:#2b2b2b; --stroke:#ffffff12; --stroke-strong:#ffffff24;
+    --text:#f2f2f2; --text-2:#c8c8c8; --text-3:#9a9a9a;
+    --accent:#60cdff; --accent-hover:#7ad4ff; --accent-soft:#60cdff1a;
+    --good:#6ccb5f; --warn:#fce100; --bad:#ff99a4;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .window{max-width:1080px;height:720px;margin:24px auto;background:var(--mica);border:1px solid var(--stroke-strong);border-radius:12px;overflow:hidden;box-shadow:0 24px 64px #00000033;display:flex;flex-direction:column}
+  .titlebar{height:44px;display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;flex:none}
+  .titlebar .app{font-weight:600;font-size:13px;letter-spacing:.2px;display:flex;align-items:center;gap:8px}
+  .titlebar .dot{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+  .titlebar .spacer{flex:1}
+  .titlebar .caption{display:flex;gap:2px}
+  .titlebar .cap{width:38px;height:30px;display:grid;place-items:center;border-radius:6px;color:var(--text-2)}
+  .titlebar .cap:hover{background:#00000010}
+  html.dark .titlebar .cap:hover{background:#ffffff14}
+  .titlebar .cap.close:hover{background:#c42b1c;color:#fff}
+  .shell{flex:1;display:flex;min-height:0}
+  .nav{width:var(--nav-w);flex:none;padding:8px;display:flex;flex-direction:column;gap:2px}
+  .nav .navitem{display:flex;align-items:center;gap:12px;height:40px;padding:0 12px;border-radius:var(--radius);color:var(--text);cursor:pointer;position:relative;font-size:14px;user-select:none}
+  .nav .navitem .ico{width:20px;text-align:center;font-size:16px;opacity:.9}
+  .nav .navitem:hover{background:#00000008}
+  html.dark .nav .navitem:hover{background:#ffffff0d}
+  .nav .navitem.active{background:var(--card)}
+  .nav .navitem.active::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:3px;background:var(--accent)}
+  .nav .grow{flex:1}
+  .content{flex:1;min-width:0;background:var(--card);border-top-left-radius:12px;margin:0 8px 8px 0;border:1px solid var(--stroke);overflow:auto;padding:28px 32px}
+  h1.page{font-size:26px;font-weight:600;margin:0 0 22px}
+  .card{background:var(--card-solid);border:1px solid var(--stroke);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:15px;font-weight:600}
+  .row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--stroke)}
+  .row:last-child{border-bottom:none}
+  .row .label{flex:1}
+  .row .label .t{font-weight:500}
+  .row .label .d{color:var(--text-3);font-size:12.5px}
+  .status-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
+  .stat{display:flex;align-items:center;gap:12px;padding:14px 16px;border:1px solid var(--stroke);border-radius:var(--radius-lg);background:var(--card-solid)}
+  .stat .ic{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:16px;flex:none}
+  .stat .ic.ok{background:#0f7b0f18;color:var(--good)}
+  .stat .ic.hash{background:var(--accent-soft);color:var(--accent)}
+  .stat .m .k{color:var(--text-3);font-size:12px}
+  .stat .m .v{font-weight:600}
+  .stat .m .v.mono{font-family:var(--mono);font-size:12.5px;font-weight:500}
+  .btn{height:34px;padding:0 16px;border-radius:6px;border:1px solid var(--stroke-strong);background:var(--card-solid);color:var(--text);font-family:inherit;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+  .btn:hover{background:#00000006}
+  html.dark .btn:hover{background:#ffffff0a}
+  .btn.primary{background:var(--accent);color:#fff;border-color:transparent}
+  html.dark .btn.primary{color:#003a5d}
+  .btn.primary:hover{background:var(--accent-hover)}
+  .btn.big{height:40px;padding:0 22px;font-size:15px;font-weight:600}
+  .btn.ghost{border-color:transparent;background:transparent}
+  .btn.ghost:hover{background:#00000008}
+  .split{display:flex}
+  .split .btn.primary{border-top-right-radius:0;border-bottom-right-radius:0}
+  .split .btn.caret{border-top-left-radius:0;border-bottom-left-radius:0;border-left:1px solid #ffffff33;padding:0 10px;background:var(--accent);color:#fff;border-color:transparent}
+  html.dark .split .btn.caret{color:#003a5d;border-left:1px solid #00000022}
+  .sw{width:42px;height:22px;border-radius:12px;background:#8a8a8a55;position:relative;cursor:pointer;flex:none;transition:background .15s}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px #0003}
+  .sw.on{background:var(--accent)}
+  .sw.on::after{left:23px}
+  .pill{font-size:11.5px;padding:2px 9px;border-radius:20px;font-weight:600}
+  .pill.gray{background:#8a8a8a22;color:var(--text-2)}
+  .pill.good{background:#0f7b0f18;color:var(--good)}
+  .pill.warn{background:#9d5d0018;color:var(--warn)}
+  .pill.acc{background:var(--accent-soft);color:var(--accent)}
+  input.txt,select.txt{height:32px;padding:0 10px;border-radius:6px;border:1px solid var(--stroke-strong);background:var(--card-solid);color:var(--text);font-family:inherit;font-size:13.5px;min-width:220px}
+  input.txt:focus,select.txt:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+  .seg{display:inline-flex;border:1px solid var(--stroke-strong);border-radius:7px;overflow:hidden}
+  .seg button{height:30px;padding:0 14px;border:none;background:transparent;color:var(--text-2);font-family:inherit;font-size:13px;cursor:pointer}
+  .seg button.on{background:var(--accent);color:#fff}
+  html.dark .seg button.on{color:#003a5d}
+  .editor{background:#1e1e1e;border-radius:8px;border:1px solid var(--stroke);overflow:hidden}
+  html:not(.dark) .editor{background:#1e1e1e}
+  .editor .bar{height:34px;display:flex;align-items:center;gap:10px;padding:0 12px;background:#00000022;color:#ccc;font-size:12px;border-bottom:1px solid #ffffff10}
+  .editor pre{margin:0;padding:14px 16px;font-family:var(--mono);font-size:12.5px;line-height:1.6;color:#d4d4d4;overflow:auto;max-height:360px}
+  .editor .sec{color:#569cd6}.editor .key{color:#9cdcfe}.editor .str{color:#ce9178}.editor .cm{color:#6a9955}.editor .bool{color:#569cd6}
+  .plug{display:flex;align-items:center;gap:14px;padding:12px 4px;border-bottom:1px solid var(--stroke)}
+  .plug:last-child{border-bottom:none}
+  .plug .pico{width:36px;height:36px;border-radius:8px;background:var(--accent-soft);display:grid;place-items:center;font-size:18px;flex:none}
+  .plug .pmeta{flex:1;min-width:0}
+  .plug .pmeta .pn{font-weight:600}
+  .plug .pmeta .pd{color:var(--text-3);font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .steps{display:flex;flex-direction:column;gap:6px;margin:2px 0}
+  .step{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:8px;border:1px solid var(--stroke)}
+  .step .sn{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:600;flex:none;background:#8a8a8a22;color:var(--text-2)}
+  .step.done .sn{background:var(--good);color:#fff}
+  .step.run .sn{background:transparent}
+  .step .stxt{flex:1}
+  .step .stxt .sd{color:var(--text-3);font-size:12.5px}
+  .spin{width:20px;height:20px;border:2px solid var(--accent);border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .console{background:#1a1a1a;border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:12px;color:#c8c8c8;line-height:1.65;max-height:170px;overflow:auto;margin-top:12px}
+  .console .dim{color:#7a7a7a}.console .acc{color:#60cdff}.console .ok{color:#6ccb5f}
+  .banner{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;margin-bottom:16px;border:1px solid}
+  .banner.warn{background:#9d5d000f;border-color:#9d5d0033;color:var(--warn)}
+  .banner.good{background:#0f7b0f0f;border-color:#0f7b0f33;color:var(--good)}
+  .banner .bt{flex:1;color:var(--text)}
+  .topbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+  .topbar .spacer{flex:1}
+  .hint{font-size:12.5px;color:var(--text-3);margin-top:8px}
+  .hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="window">
+  <div class="titlebar">
+    <div class="app"><span class="dot"></span><span data-i="appTitle"></span></div>
+    <div class="spacer"></div>
+    <div class="caption"><div class="cap">—</div><div class="cap">□</div><div class="cap close">✕</div></div>
+  </div>
+  <div class="shell">
+    <div class="nav" id="nav">
+      <div class="navitem active" data-page="home"><span class="ico">⌂</span><span data-i="navHome"></span></div>
+      <div class="navitem" data-page="version"><span class="ico">⭳</span><span data-i="navVersion"></span></div>
+      <div class="navitem" data-page="modules"><span class="ico">⚙</span><span data-i="navModules"></span></div>
+      <div class="navitem" data-page="plugins"><span class="ico">🧩</span><span data-i="navPlugins"></span></div>
+      <div class="navitem" data-page="interop"><span class="ico">🔧</span><span data-i="navInterop"></span></div>
+      <div class="navitem" data-page="logs"><span class="ico">📄</span><span data-i="navLogs"></span></div>
+      <div class="grow"></div>
+      <div class="navitem" data-page="settings"><span class="ico">⚙</span><span data-i="navSettings"></span></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+<script>
+const I18N={
+ "zh-Hans":{appTitle:"clientpatch 管理器",
+  navHome:"主页",navVersion:"版本",navModules:"模块",navPlugins:"插件",navInterop:"互操作",navLogs:"日志",navSettings:"设置",
+  homeTitle:"主页",stGame:"游戏",stGameV:"6.10.1",stPatch:"clientpatch",stPatchV:"v1.4.2",stServer:"LilyPad",stServerV:"可连接",stBuild:"构建",
+  launch:"启动游戏",viaSteam:"通过 Steam 启动",direct:"直接启动",openFolder:"游戏目录",
+  healthTitle:"模块状态",hLilypad:"LilyPad 重定向",hLocalize:"简体中文",hSteam:"Steam 桥接",ok:"正常",off:"未启用",
+  verTitle:"版本",verCurrent:"当前",verLatest:"最新",verChannel:"通道",chStable:"稳定",chBeta:"测试",
+  updateNow:"更新到 v1.5.0",upToDate:"最新",needUpdate:"可更新",
+  compPatch:"clientpatch",compLang:"语言包",compBepin:"BepInEx",bepinNote:"启用 bepinex 模块时管理",
+  backupNote:"更新前自动备份 version.dll 与配置",rollback:"回滚",
+  modTitle:"模块",tabForm:"表单",tabToml:"TOML",openInEditor:"文本编辑器",save:"保存",
+  secLilypad:"LilyPad 重定向",fApi:"API 地址",fPlatform:"平台地址",fSigning:"签名",
+  secLocalize:"本地化",fLangpack:"语言包目录",fFontUi:"UI 字体",fFontStory:"剧情字体",
+  secSteam:"Steam 桥接",fSteamMode:"模式",fCountry:"地区",fUiLang:"界面语言",secTitlebar:"标题栏标记",secRedir:"注册表隔离",
+  plugTitle:"插件",plugScan:"重新扫描",plugOpen:"插件目录",plugEnabled:"启用",plugDisabled:"停用",plugNeedBepin:"需要 bepinex 模块",
+  interopTitle:"互操作",interopOutdated:"当前构建的互操作程序集已过期",interopCurrent:"互操作程序集最新，构建 bb2763f60afca0cc，186 个",
+  interopCheck:"检查",interopGen:"离线生成",interopGenRun:"生成中",
+  stepUnpack:"senbei 静态解包",stepUnpackD:"从磁盘解密 GameAssembly 与 metadata",
+  stepDump:"Il2CppDumper",stepDumpD:"生成带 FieldOffset 的 DummyDll",stepGen:"Il2CppInterop.CLI",stepGenD:"生成互操作程序集",
+  interopTools:"senbei、Il2CppDumper、CLI 按需下载并缓存",
+  interopRuntime:"游戏运行时若发现互操作缺失，clientpatch 会做运行时转储并调用本管理器生成，生成后自动重启游戏。此处仅做离线生成。",
+  logTitle:"日志",logClear:"清空",logOpenFile:"日志文件",logFollow:"自动滚动",
+  setTitle:"设置",setGamePath:"游戏目录",setFeed:"发布源",setLaunch:"启动方式",setMode:"显示模式",modeSimple:"简易",modeAdvanced:"高级",
+  setLang:"界面语言",setTheme:"主题",setAuto:"启动时检查更新",setBackup:"改动前备份",
+  thSystem:"跟随系统",thLight:"浅色",thDark:"深色",langSystem:"跟随系统",detected:"已检测",browse:"浏览"},
+ "zh-Hant":{appTitle:"clientpatch 管理器",
+  navHome:"首頁",navVersion:"版本",navModules:"模組",navPlugins:"外掛",navInterop:"互操作",navLogs:"記錄",navSettings:"設定",
+  homeTitle:"首頁",stGame:"遊戲",stGameV:"6.10.1",stPatch:"clientpatch",stPatchV:"v1.4.2",stServer:"LilyPad",stServerV:"可連線",stBuild:"組建",
+  launch:"啟動遊戲",viaSteam:"透過 Steam 啟動",direct:"直接啟動",openFolder:"遊戲目錄",
+  healthTitle:"模組狀態",hLilypad:"LilyPad 重新導向",hLocalize:"簡體中文",hSteam:"Steam 橋接",ok:"正常",off:"未啟用",
+  verTitle:"版本",verCurrent:"目前",verLatest:"最新",verChannel:"通道",chStable:"穩定",chBeta:"測試",
+  updateNow:"更新到 v1.5.0",upToDate:"最新",needUpdate:"可更新",
+  compPatch:"clientpatch",compLang:"語言包",compBepin:"BepInEx",bepinNote:"啟用 bepinex 模組時管理",
+  backupNote:"更新前自動備份 version.dll 與設定",rollback:"還原",
+  modTitle:"模組",tabForm:"表單",tabToml:"TOML",openInEditor:"文字編輯器",save:"儲存",
+  secLilypad:"LilyPad 重新導向",fApi:"API 位址",fPlatform:"平台位址",fSigning:"簽章",
+  secLocalize:"在地化",fLangpack:"語言包目錄",fFontUi:"UI 字型",fFontStory:"劇情字型",
+  secSteam:"Steam 橋接",fSteamMode:"模式",fCountry:"地區",fUiLang:"介面語言",secTitlebar:"標題列標記",secRedir:"登錄隔離",
+  plugTitle:"外掛",plugScan:"重新掃描",plugOpen:"外掛目錄",plugEnabled:"啟用",plugDisabled:"停用",plugNeedBepin:"需要 bepinex 模組",
+  interopTitle:"互操作",interopOutdated:"目前組建的互操作組件已過期",interopCurrent:"互操作組件最新，組建 bb2763f60afca0cc，186 個",
+  interopCheck:"檢查",interopGen:"離線產生",interopGenRun:"產生中",
+  stepUnpack:"senbei 靜態解包",stepUnpackD:"從磁碟解密 GameAssembly 與 metadata",
+  stepDump:"Il2CppDumper",stepDumpD:"產生帶 FieldOffset 的 DummyDll",stepGen:"Il2CppInterop.CLI",stepGenD:"產生互操作組件",
+  interopTools:"senbei、Il2CppDumper、CLI 按需下載並快取",
+  interopRuntime:"遊戲執行時若發現互操作缺失，clientpatch 會做執行時轉儲並呼叫本管理器產生，產生後自動重啟遊戲。此處僅做離線產生。",
+  logTitle:"記錄",logClear:"清空",logOpenFile:"記錄檔",logFollow:"自動捲動",
+  setTitle:"設定",setGamePath:"遊戲目錄",setFeed:"發佈來源",setLaunch:"啟動方式",setMode:"顯示模式",modeSimple:"簡易",modeAdvanced:"進階",
+  setLang:"介面語言",setTheme:"主題",setAuto:"啟動時檢查更新",setBackup:"變更前備份",
+  thSystem:"跟隨系統",thLight:"淺色",thDark:"深色",langSystem:"跟隨系統",detected:"已偵測",browse:"瀏覽"},
+ "en":{appTitle:"clientpatch manager",
+  navHome:"Home",navVersion:"Updates",navModules:"Modules",navPlugins:"Plugins",navInterop:"Interop",navLogs:"Logs",navSettings:"Settings",
+  homeTitle:"Home",stGame:"Game",stGameV:"6.10.1",stPatch:"clientpatch",stPatchV:"v1.4.2",stServer:"LilyPad",stServerV:"reachable",stBuild:"Build",
+  launch:"Launch game",viaSteam:"Launch via Steam",direct:"Launch directly",openFolder:"Game folder",
+  healthTitle:"Modules",hLilypad:"LilyPad redirect",hLocalize:"Simplified Chinese",hSteam:"Steam bridge",ok:"OK",off:"Off",
+  verTitle:"Updates",verCurrent:"Current",verLatest:"Latest",verChannel:"Channel",chStable:"Stable",chBeta:"Beta",
+  updateNow:"Update to v1.5.0",upToDate:"Up to date",needUpdate:"Update available",
+  compPatch:"clientpatch",compLang:"Language packs",compBepin:"BepInEx",bepinNote:"Managed when the bepinex module is on",
+  backupNote:"version.dll and config are backed up before every update",rollback:"Roll back",
+  modTitle:"Modules",tabForm:"Form",tabToml:"TOML",openInEditor:"Text editor",save:"Save",
+  secLilypad:"LilyPad redirect",fApi:"API base",fPlatform:"Platform base",fSigning:"Signing",
+  secLocalize:"Localization",fLangpack:"Langpack directory",fFontUi:"UI font",fFontStory:"Story font",
+  secSteam:"Steam bridge",fSteamMode:"Mode",fCountry:"Country",fUiLang:"UI language",secTitlebar:"Title bar marker",secRedir:"Registry isolation",
+  plugTitle:"Plugins",plugScan:"Rescan",plugOpen:"Plugins folder",plugEnabled:"Enabled",plugDisabled:"Disabled",plugNeedBepin:"Requires the bepinex module",
+  interopTitle:"Interop",interopOutdated:"Interop assemblies are outdated for the installed build",interopCurrent:"Interop assemblies current, build bb2763f60afca0cc, 186 assemblies",
+  interopCheck:"Check",interopGen:"Generate offline",interopGenRun:"Generating",
+  stepUnpack:"senbei static unpack",stepUnpackD:"Decrypt GameAssembly and metadata from disk",
+  stepDump:"Il2CppDumper",stepDumpD:"Produce DummyDll with FieldOffset attributes",stepGen:"Il2CppInterop.CLI",stepGenD:"Generate interop assemblies",
+  interopTools:"senbei, Il2CppDumper and the CLI download on demand and cache",
+  interopRuntime:"When the game runs and interop is missing, clientpatch takes a runtime dump, calls this manager to generate, and restarts the game afterward. This page only does offline generation.",
+  logTitle:"Logs",logClear:"Clear",logOpenFile:"Log file",logFollow:"Auto-scroll",
+  setTitle:"Settings",setGamePath:"Game folder",setFeed:"Release feed",setLaunch:"Launch method",setMode:"Display",modeSimple:"Simple",modeAdvanced:"Advanced",
+  setLang:"Interface language",setTheme:"Theme",setAuto:"Check for updates on launch",setBackup:"Back up before changes",
+  thSystem:"System",thLight:"Light",thDark:"Dark",langSystem:"System",detected:"detected",browse:"Browse"},
+ "ja":{appTitle:"clientpatch マネージャー",
+  navHome:"ホーム",navVersion:"更新",navModules:"モジュール",navPlugins:"プラグイン",navInterop:"相互運用",navLogs:"ログ",navSettings:"設定",
+  homeTitle:"ホーム",stGame:"ゲーム",stGameV:"6.10.1",stPatch:"clientpatch",stPatchV:"v1.4.2",stServer:"LilyPad",stServerV:"接続可能",stBuild:"ビルド",
+  launch:"ゲームを起動",viaSteam:"Steam から起動",direct:"直接起動",openFolder:"ゲームフォルダー",
+  healthTitle:"モジュール",hLilypad:"LilyPad リダイレクト",hLocalize:"簡体字中国語",hSteam:"Steam ブリッジ",ok:"正常",off:"無効",
+  verTitle:"更新",verCurrent:"現在",verLatest:"最新",verChannel:"チャンネル",chStable:"安定版",chBeta:"ベータ",
+  updateNow:"v1.5.0 に更新",upToDate:"最新",needUpdate:"更新あり",
+  compPatch:"clientpatch",compLang:"言語パック",compBepin:"BepInEx",bepinNote:"bepinex モジュール有効時に管理",
+  backupNote:"更新前に version.dll と設定をバックアップ",rollback:"元に戻す",
+  modTitle:"モジュール",tabForm:"フォーム",tabToml:"TOML",openInEditor:"テキストエディター",save:"保存",
+  secLilypad:"LilyPad リダイレクト",fApi:"API ベース",fPlatform:"プラットフォームベース",fSigning:"署名",
+  secLocalize:"ローカライズ",fLangpack:"言語パックフォルダー",fFontUi:"UI フォント",fFontStory:"ストーリーフォント",
+  secSteam:"Steam ブリッジ",fSteamMode:"モード",fCountry:"地域",fUiLang:"UI 言語",secTitlebar:"タイトルバー表示",secRedir:"レジストリ分離",
+  plugTitle:"プラグイン",plugScan:"再スキャン",plugOpen:"プラグインフォルダー",plugEnabled:"有効",plugDisabled:"無効",plugNeedBepin:"bepinex モジュールが必要",
+  interopTitle:"相互運用",interopOutdated:"インストール済みビルドの相互運用アセンブリが古い",interopCurrent:"相互運用アセンブリは最新、ビルド bb2763f60afca0cc、186 個",
+  interopCheck:"確認",interopGen:"オフライン生成",interopGenRun:"生成中",
+  stepUnpack:"senbei 静的アンパック",stepUnpackD:"ディスクから GameAssembly と metadata を復号",
+  stepDump:"Il2CppDumper",stepDumpD:"FieldOffset 付き DummyDll を生成",stepGen:"Il2CppInterop.CLI",stepGenD:"相互運用アセンブリを生成",
+  interopTools:"senbei、Il2CppDumper、CLI は必要時にダウンロードしキャッシュ",
+  interopRuntime:"ゲーム実行時に相互運用が無い場合、clientpatch がランタイムダンプを取り、本マネージャーを呼んで生成し、生成後にゲームを再起動します。このページはオフライン生成のみ。",
+  logTitle:"ログ",logClear:"クリア",logOpenFile:"ログファイル",logFollow:"自動スクロール",
+  setTitle:"設定",setGamePath:"ゲームフォルダー",setFeed:"配布フィード",setLaunch:"起動方法",setMode:"表示",modeSimple:"シンプル",modeAdvanced:"詳細",
+  setLang:"表示言語",setTheme:"テーマ",setAuto:"起動時に更新を確認",setBackup:"変更前にバックアップ",
+  thSystem:"システム",thLight:"ライト",thDark:"ダーク",langSystem:"システム",detected:"検出済み",browse:"参照"},
+ "ko":{appTitle:"clientpatch 관리자",
+  navHome:"홈",navVersion:"업데이트",navModules:"모듈",navPlugins:"플러그인",navInterop:"인터op",navLogs:"로그",navSettings:"설정",
+  homeTitle:"홈",stGame:"게임",stGameV:"6.10.1",stPatch:"clientpatch",stPatchV:"v1.4.2",stServer:"LilyPad",stServerV:"연결 가능",stBuild:"빌드",
+  launch:"게임 실행",viaSteam:"Steam으로 실행",direct:"직접 실행",openFolder:"게임 폴더",
+  healthTitle:"모듈",hLilypad:"LilyPad 리디렉션",hLocalize:"중국어 간체",hSteam:"Steam 브리지",ok:"정상",off:"꺼짐",
+  verTitle:"업데이트",verCurrent:"현재",verLatest:"최신",verChannel:"채널",chStable:"안정",chBeta:"베타",
+  updateNow:"v1.5.0로 업데이트",upToDate:"최신",needUpdate:"업데이트 있음",
+  compPatch:"clientpatch",compLang:"언어 팩",compBepin:"BepInEx",bepinNote:"bepinex 모듈 사용 시 관리",
+  backupNote:"업데이트 전 version.dll과 설정을 백업",rollback:"되돌리기",
+  modTitle:"모듈",tabForm:"양식",tabToml:"TOML",openInEditor:"텍스트 편집기",save:"저장",
+  secLilypad:"LilyPad 리디렉션",fApi:"API 주소",fPlatform:"플랫폼 주소",fSigning:"서명",
+  secLocalize:"현지화",fLangpack:"언어 팩 폴더",fFontUi:"UI 글꼴",fFontStory:"스토리 글꼴",
+  secSteam:"Steam 브리지",fSteamMode:"모드",fCountry:"지역",fUiLang:"UI 언어",secTitlebar:"제목 표시줄 표시",secRedir:"레지스트리 격리",
+  plugTitle:"플러그인",plugScan:"다시 스캔",plugOpen:"플러그인 폴더",plugEnabled:"사용",plugDisabled:"사용 안 함",plugNeedBepin:"bepinex 모듈 필요",
+  interopTitle:"인터op",interopOutdated:"설치된 빌드의 인터op 어셈블리가 오래됨",interopCurrent:"인터op 어셈블리 최신, 빌드 bb2763f60afca0cc, 186개",
+  interopCheck:"확인",interopGen:"오프라인 생성",interopGenRun:"생성 중",
+  stepUnpack:"senbei 정적 언팩",stepUnpackD:"디스크에서 GameAssembly와 metadata 복호화",
+  stepDump:"Il2CppDumper",stepDumpD:"FieldOffset이 있는 DummyDll 생성",stepGen:"Il2CppInterop.CLI",stepGenD:"인터op 어셈블리 생성",
+  interopTools:"senbei, Il2CppDumper, CLI는 필요할 때 내려받아 캐시",
+  interopRuntime:"게임 실행 중 인터op이 없으면 clientpatch가 런타임 덤프를 뜨고 이 관리자를 호출해 생성한 뒤 게임을 재시작합니다. 이 페이지는 오프라인 생성만 합니다.",
+  logTitle:"로그",logClear:"지우기",logOpenFile:"로그 파일",logFollow:"자동 스크롤",
+  setTitle:"설정",setGamePath:"게임 폴더",setFeed:"릴리스 피드",setLaunch:"실행 방법",setMode:"표시",modeSimple:"간단",modeAdvanced:"고급",
+  setLang:"인터페이스 언어",setTheme:"테마",setAuto:"실행 시 업데이트 확인",setBackup:"변경 전 백업",
+  thSystem:"시스템",thLight:"라이트",thDark:"다크",langSystem:"시스템",detected:"감지됨",browse:"찾아보기"},
+};
+let LANG="zh-Hans";
+const t=k=>(I18N[LANG][k]??I18N["en"][k]??k);
+
+const PAGES={
+ home:()=>`
+  <h1 class="page">${t("homeTitle")}</h1>
+  <div class="status-grid">
+    <div class="stat"><div class="ic ok">✓</div><div class="m"><div class="k">${t("stGame")}</div><div class="v">${t("stGameV")}</div></div></div>
+    <div class="stat"><div class="ic ok">✓</div><div class="m"><div class="k">${t("stPatch")}</div><div class="v">${t("stPatchV")}</div></div></div>
+    <div class="stat"><div class="ic ok">✓</div><div class="m"><div class="k">${t("stServer")}</div><div class="v">${t("stServerV")}</div></div></div>
+    <div class="stat"><div class="ic hash">#</div><div class="m"><div class="k">${t("stBuild")}</div><div class="v mono">bb2763f60afca0cc</div></div></div>
+  </div>
+  <div class="card" style="display:flex;align-items:center;gap:14px">
+    <div class="split"><button class="btn primary big">▶ ${t("launch")}</button><button class="btn caret big" id="launchCaret">▾</button></div>
+    <button class="btn">${t("openFolder")}</button>
+    <div id="launchMode" class="hint" style="margin:0;flex:1">${t("viaSteam")}</div>
+  </div>
+  <div class="card">
+    <h3>${t("healthTitle")}</h3>
+    <div class="row"><div class="label"><div class="t">${t("hLilypad")}</div></div><span class="pill good">${t("ok")}</span></div>
+    <div class="row"><div class="label"><div class="t">${t("hLocalize")}</div></div><span class="pill good">${t("ok")}</span></div>
+    <div class="row"><div class="label"><div class="t">${t("hSteam")}</div></div><span class="pill good">${t("ok")}</span></div>
+  </div>`,
+
+ version:()=>`
+  <h1 class="page">${t("verTitle")}</h1>
+  <div class="card">
+    <div class="row">
+      <div class="label"><div class="t">clientpatch</div><div class="d">${t("verCurrent")} v1.4.2 · ${t("verLatest")} v1.5.0</div></div>
+      <button class="btn primary">⭳ ${t("updateNow")}</button>
+    </div>
+    <div class="row">
+      <div class="label"><div class="t">${t("verChannel")}</div></div>
+      <div class="seg"><button class="on">${t("chStable")}</button><button>${t("chBeta")}</button></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row"><div class="label"><div class="t">${t("compPatch")}</div><div class="d">v1.4.2 → v1.5.0</div></div><span class="pill warn">${t("needUpdate")}</span></div>
+    <div class="row"><div class="label"><div class="t">${t("compLang")}</div><div class="d">zhCN · en · master_zhCN</div></div><span class="pill good">${t("upToDate")}</span></div>
+    <div class="row"><div class="label"><div class="t">${t("compBepin")}</div><div class="d">be.788 · ${t("bepinNote")}</div></div><span class="pill good">${t("upToDate")}</span></div>
+  </div>
+  <div class="banner good"><span>⭯</span><div class="bt">${t("backupNote")}</div><button class="btn">${t("rollback")}</button></div>`,
+
+ modules:()=>`
+  <h1 class="page">${t("modTitle")}</h1>
+  <div class="topbar">
+    <div class="seg" id="modTabs"><button class="on" data-tab="form">${t("tabForm")}</button><button data-tab="toml">${t("tabToml")}</button></div>
+    <div class="spacer"></div>
+    <button class="btn">${t("openInEditor")}</button>
+    <button class="btn primary">${t("save")}</button>
+  </div>
+  <div id="modForm">
+    <div class="card">
+      <div class="row"><div class="label"><div class="t">${t("secLilypad")}</div></div><div class="sw on" data-sw></div></div>
+      <div class="row"><div class="label"><div class="t">${t("fApi")}</div></div><input class="txt" value="http://127.0.0.1:8443/"></div>
+      <div class="row"><div class="label"><div class="t">${t("fPlatform")}</div></div><input class="txt" value="http://127.0.0.1:8443"></div>
+      <div class="row"><div class="label"><div class="t">${t("fSigning")}</div></div><select class="txt"><option>noop</option><option>rsa</option></select></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="label"><div class="t">${t("secLocalize")}</div></div><div class="sw on" data-sw></div></div>
+      <div class="row"><div class="label"><div class="t">${t("fLangpack")}</div></div><input class="txt" value="langpacks"></div>
+      <div class="row"><div class="label"><div class="t">${t("fFontUi")}</div></div><input class="txt" value="fonts/hanyizhengyuan_UI.otf"></div>
+      <div class="row"><div class="label"><div class="t">${t("fFontStory")}</div></div><input class="txt" value="fonts/DFPKingGothicSC-Regular-novel.ttf"></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="label"><div class="t">${t("secSteam")}</div></div><div class="sw on" data-sw></div></div>
+      <div class="row"><div class="label"><div class="t">${t("fSteamMode")}</div></div><select class="txt"><option>auto</option><option>skip_restart</option><option>stub</option><option>off</option></select></div>
+      <div class="row"><div class="label"><div class="t">${t("fCountry")}</div></div><input class="txt" value="JP"></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="label"><div class="t">${t("secTitlebar")}</div></div><div class="sw on" data-sw></div></div>
+      <div class="row"><div class="label"><div class="t">${t("secRedir")}</div></div><div class="sw on" data-sw></div></div>
+    </div>
+  </div>
+  <div id="modToml" class="hidden">
+    <div class="editor">
+      <div class="bar"><span style="color:#6ccb5f">●</span> clientpatch.toml<span style="flex:1"></span></div>
+      <pre>${tomlSample()}</pre>
+    </div>
+  </div>`,
+
+ plugins:()=>`
+  <h1 class="page">${t("plugTitle")}</h1>
+  <div class="topbar"><button class="btn">↻ ${t("plugScan")}</button><button class="btn ghost">${t("plugOpen")}</button></div>
+  <div class="card">
+    ${plug("🈶","HBR.Localize.Extra","1.2.0 · WFS.Modding",true)}
+    ${plug("🎮","HBR.QuickLaunch","0.4.1",true)}
+    ${plug("🐞","clientpatch-smoke","dev",false)}
+    ${plug("🗺️","HBR.EventTracker","0.9.0",false)}
+  </div>`,
+
+ interop:()=>`
+  <h1 class="page">${t("interopTitle")}</h1>
+  <div class="banner warn"><span>⚠</span><div class="bt">${t("interopOutdated")}</div></div>
+  <div class="topbar"><button class="btn">${t("interopCheck")}</button><div class="spacer"></div><button class="btn primary" id="genBtn">${t("interopGen")}</button></div>
+  <div class="card">
+    <div class="steps">
+      ${step(1,"done","stepUnpack","stepUnpackD")}
+      ${step(2,"run","stepDump","stepDumpD")}
+      ${step(3,"idle","stepGen","stepGenD")}
+    </div>
+    <div class="console">
+<span class="dim">[senbei]</span> GameAssembly.dll <span class="ok">ok</span> · metadata tokens rewritten
+<span class="dim">[senbei]</span> wrote unpack/GameAssembly.unpack.dll (48.2 MB)
+<span class="dim">[dumper]</span> index form · metadata v31.1
+<span class="dim">[dumper]</span> DummyDll 187 assemblies <span class="acc">▊</span>
+    </div>
+  </div>
+  <div class="hint">${t("interopTools")}</div>
+  <div class="hint">${t("interopRuntime")}</div>`,
+
+ logs:()=>`
+  <h1 class="page">${t("logTitle")}</h1>
+  <div class="topbar"><button class="btn">${t("logClear")}</button><button class="btn ghost">${t("logOpenFile")}</button><div class="spacer"></div><label style="display:flex;align-items:center;gap:8px;color:var(--text-2)"><span class="sw on" data-sw></span>${t("logFollow")}</label></div>
+  <div class="editor"><pre>${logSample()}</pre></div>`,
+
+ settings:()=>`
+  <h1 class="page">${t("setTitle")}</h1>
+  <div class="card">
+    <div class="row"><div class="label"><div class="t">${t("setGamePath")}</div><div class="d">&lt;game-dir&gt; · <span style="color:var(--good)">${t("detected")}</span></div></div><button class="btn">${t("browse")}</button></div>
+    <div class="row"><div class="label"><div class="t">${t("setLaunch")}</div></div><div class="seg"><button class="on">${t("viaSteam")}</button><button>${t("direct")}</button></div></div>
+    <div class="row"><div class="label"><div class="t">${t("setFeed")}</div></div><input class="txt" value="https://github.com/…/releases" style="min-width:300px"></div>
+  </div>
+  <div class="card">
+    <div class="row"><div class="label"><div class="t">${t("setLang")}</div></div>
+      <select class="txt" id="langSel" style="min-width:150px">
+        <option value="system">${t("langSystem")}</option>
+        <option value="zh-Hans">简体中文</option><option value="zh-Hant">繁體中文</option>
+        <option value="en">English</option><option value="ja">日本語</option><option value="ko">한국어</option>
+      </select></div>
+    <div class="row"><div class="label"><div class="t">${t("setTheme")}</div></div>
+      <div class="seg" id="thSeg"><button data-th="system" class="on">${t("thSystem")}</button><button data-th="light">${t("thLight")}</button><button data-th="dark">${t("thDark")}</button></div></div>
+    <div class="row"><div class="label"><div class="t">${t("setAuto")}</div></div><div class="sw on" data-sw></div></div>
+    <div class="row"><div class="label"><div class="t">${t("setBackup")}</div></div><div class="sw on" data-sw></div></div>
+  </div>`,
+};
+function plug(ic,name,desc,on){return `<div class="plug"><div class="pico">${ic}</div><div class="pmeta"><div class="pn">${name}</div><div class="pd">${desc}</div></div><span class="pill ${on?"good":"gray"}">${on?t("plugEnabled"):t("plugDisabled")}</span><div class="sw ${on?"on":""}" data-sw></div></div>`;}
+function step(n,state,k,d){const sn=state==="run"?'<span class="spin"></span>':`<div class="sn">${state==="done"?"✓":n}</div>`;return `<div class="step ${state}">${sn}<div class="stxt"><div>${t(k)}</div><div class="sd">${t(d)}</div></div></div>`;}
+function tomlSample(){return `<span class="cm"># clientpatch.toml</span>
+<span class="sec">[loader]</span>
+<span class="key">log</span> = <span class="str">"clientpatch.log"</span>
+
+<span class="sec">[lilypad]</span>
+<span class="key">enable</span> = <span class="bool">true</span>
+<span class="key">api_base</span>      = <span class="str">"http://127.0.0.1:8443/"</span>
+<span class="key">platform_base</span> = <span class="str">"http://127.0.0.1:8443"</span>
+<span class="key">signing</span>       = <span class="str">"noop"</span>
+
+<span class="sec">[steam]</span>
+<span class="key">enable</span> = <span class="bool">true</span>
+<span class="key">mode</span> = <span class="str">"auto"</span>
+
+<span class="sec">[regredirect]</span>
+<span class="key">enable</span> = <span class="bool">true</span>
+
+<span class="sec">[titlebar]</span>
+<span class="key">enable</span> = <span class="bool">true</span>
+
+<span class="sec">[lilypad.report]</span>
+<span class="key">enable</span> = <span class="bool">true</span>
+
+<span class="sec">[interopdump]</span>
+<span class="key">enable</span> = <span class="bool">false</span>
+
+<span class="sec">[bepinex]</span>
+<span class="key">enable</span> = <span class="bool">false</span>`;}
+function logSample(){return `<span style="color:#6a9955">14:02:11.204</span> <span style="color:#569cd6">[boot]</span>  clientpatch starting (pid 24180)
+<span style="color:#6a9955">14:02:12.881</span> <span style="color:#569cd6">[il2cpp]</span> assembly count plateau at 186
+<span style="color:#6a9955">14:02:12.902</span> <span style="color:#ce9178">[lilypad]</span> REDIR UWRServerRequest.BaseUri to http://127.0.0.1:8443/
+<span style="color:#6a9955">14:02:12.905</span> <span style="color:#ce9178">[lilypad]</span> REDIR PAYMENT host to 127.0.0.1:8443
+<span style="color:#6a9955">14:02:13.440</span> <span style="color:#dcdcaa">[localize]</span> InitializeLanguage added en(3), zhCN(4)
+<span style="color:#6a9955">14:02:14.210</span> <span style="color:#569cd6">[status]</span> init complete, redirect live
+<span style="color:#6a9955">14:02:14.211</span> <span style="color:#6ccb5f">[ok]</span>    3/3 modules healthy</span>`;}
+
+let PAGE="home";
+function render(){
+  document.querySelectorAll("[data-i]").forEach(e=>e.textContent=t(e.dataset.i));
+  document.getElementById("content").innerHTML=PAGES[PAGE]();
+  bind();
+}
+function bind(){
+  document.querySelectorAll("[data-sw]").forEach(s=>s.onclick=()=>s.classList.toggle("on"));
+  const tabs=document.getElementById("modTabs");
+  if(tabs)tabs.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    tabs.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+    document.getElementById("modForm").classList.toggle("hidden",b.dataset.tab!=="form");
+    document.getElementById("modToml").classList.toggle("hidden",b.dataset.tab!=="toml");
+  });
+  const th=document.getElementById("thSeg");
+  if(th)th.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    th.querySelectorAll("button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+    const m=b.dataset.th;const sys=matchMedia("(prefers-color-scheme:dark)").matches;
+    document.documentElement.classList.toggle("dark",m==="dark"||(m==="system"&&sys));
+  });
+  const ls=document.getElementById("langSel");
+  if(ls){ls.value=LANG;ls.onchange=e=>{LANG=e.target.value==="system"?"zh-Hans":e.target.value;document.documentElement.lang=LANG;render();};}
+  const gen=document.getElementById("genBtn");
+  if(gen)gen.onclick=()=>{gen.textContent=t("interopGenRun");gen.classList.remove("primary");};
+  const caret=document.getElementById("launchCaret");
+  if(caret)caret.onclick=()=>{const m=document.getElementById("launchMode");m.textContent=m.textContent===t("viaSteam")?t("direct"):t("viaSteam");};
+}
+document.getElementById("nav").querySelectorAll(".navitem").forEach(n=>n.onclick=()=>{
+  document.querySelectorAll("#nav .navitem").forEach(x=>x.classList.remove("active"));
+  n.classList.add("active");PAGE=n.dataset.page;render();
+});
+render();
+</script>
+</body>
+</html>

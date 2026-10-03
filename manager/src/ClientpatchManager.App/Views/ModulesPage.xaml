@@ -1,0 +1,150 @@
+<Page x:Class="ClientpatchManager.App.Views.ModulesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+      d:DataContext="{d:DesignInstance Type=vm:ModulesViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      ScrollViewer.CanContentScroll="False"
+      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <Grid Margin="32,28">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TextBlock Grid.Row="0" Text="{Binding [modTitle]}" FontTypography="Title" Margin="0,0,0,22" />
+
+        <!-- Toolbar: tab toggle + actions -->
+        <Grid Grid.Row="1" Margin="0,0,0,14">
+            <StackPanel Orientation="Horizontal">
+                <!-- OneWay: with the default TwoWay, the unchecked radio writes its
+                     initial false back into ShowForm as the page loads and the TOML tab wins. -->
+                <RadioButton Content="{Binding [tabForm]}" GroupName="modtab"
+                             IsChecked="{Binding ShowForm, Mode=OneWay}"
+                             Command="{Binding ShowFormTabCommand}" Margin="0,0,8,0" />
+                <RadioButton Content="{Binding [tabToml]}" GroupName="modtab"
+                             IsChecked="{Binding ShowForm, Converter={StaticResource InverseBool}, Mode=OneWay}"
+                             Command="{Binding ShowTomlTabCommand}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <TextBlock Text="{Binding SaveMessage}" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           VerticalAlignment="Center" Margin="0,0,12,0" />
+                <TextBlock Text="{Binding ValidationMessage}" VerticalAlignment="Center" Margin="0,0,12,0"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Visibility="{Binding ShowForm, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}" />
+                <ui:Button Content="{Binding [openInEditor]}" Command="{Binding OpenInEditorCommand}" Margin="0,0,8,0" />
+                <ui:Button Appearance="Primary" Content="{Binding [save]}" Command="{Binding SaveCommand}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Form tab -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"
+                      Visibility="{Binding ShowForm, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <ui:Card Margin="0,0,0,14">
+                    <StackPanel>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [secLilypad]}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding LilypadEnabled}" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fApi]}" VerticalAlignment="Center" />
+                            <ui:TextBox Text="{Binding ApiBase, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" MinWidth="300" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fPlatform]}" VerticalAlignment="Center" />
+                            <ui:TextBox Text="{Binding PlatformBase, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" MinWidth="300" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fSigning]}" VerticalAlignment="Center" />
+                            <ComboBox HorizontalAlignment="Right" MinWidth="160" Text="{Binding Signing}" IsEditable="True">
+                                <ComboBoxItem Content="noop" />
+                                <ComboBoxItem Content="rsa" />
+                            </ComboBox>
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fPublicKey]}" VerticalAlignment="Center" />
+                            <ui:TextBox Text="{Binding PublicKeyPath, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" MinWidth="300" />
+                        </Grid>
+                        <Grid Margin="16,6,0,6">
+                            <TextBlock Text="{Binding [secReport]}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding ReportEnabled}"
+                                             IsEnabled="{Binding LilypadEnabled}" />
+                        </Grid>
+                    </StackPanel>
+                </ui:Card>
+
+                <ui:Card Margin="0,0,0,14">
+                    <StackPanel>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [secSteam]}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding SteamEnabled}" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fSteamMode]}" VerticalAlignment="Center" />
+                            <ComboBox HorizontalAlignment="Right" MinWidth="160" Text="{Binding SteamMode}" IsEditable="True">
+                                <ComboBoxItem Content="auto" />
+                                <ComboBoxItem Content="skip_restart" />
+                                <ComboBoxItem Content="stub" />
+                                <ComboBoxItem Content="off" />
+                            </ComboBox>
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fCountry]}" VerticalAlignment="Center" />
+                            <ui:TextBox Text="{Binding Country, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" MinWidth="140" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [fUiLang]}" VerticalAlignment="Center" />
+                            <ui:TextBox Text="{Binding UiLanguage, UpdateSourceTrigger=PropertyChanged}" HorizontalAlignment="Right" MinWidth="140" />
+                        </Grid>
+                    </StackPanel>
+                </ui:Card>
+
+                <ui:Card>
+                    <StackPanel>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [secTitlebar]}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding TitlebarEnabled}" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [secRedir]}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding RegRedirectEnabled}" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="BepInEx" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding BepInExEnabled}" />
+                        </Grid>
+                        <Grid Margin="0,6">
+                            <TextBlock Text="{Binding [secInteropDump]}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding InteropDumpEnabled}" />
+                        </Grid>
+
+                    </StackPanel>
+                </ui:Card>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- TOML tab. The editor must stretch: ui:TextBox sizes to its text, so an
+             empty document would collapse to one line inside a card that sizes to content. -->
+        <!-- Both alignments are load-bearing. Card defaults to VerticalAlignment=Center and
+             VerticalContentAlignment=Center, and its template binds the border to the first and
+             the content presenter to the second — so the border fills the row while the editor
+             inside is given only its one-line desired height and centered. -->
+        <ui:Card Grid.Row="2" Padding="0" VerticalAlignment="Stretch" VerticalContentAlignment="Stretch"
+                 Visibility="{Binding ShowForm, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+            <!-- Stock TextBox, not ui:TextBox: the Fluent one is a single-line field
+                 (vertically centered text, a clear button). The library restyles the
+                 native TextBox too, and that style is the multiline editor. -->
+            <TextBox Text="{Binding RawToml, UpdateSourceTrigger=PropertyChanged}"
+                     FontFamily="Cascadia Code, Consolas" FontSize="12.5"
+                     AcceptsReturn="True" AcceptsTab="True" VerticalScrollBarVisibility="Auto"
+                     HorizontalScrollBarVisibility="Auto" Padding="14,12"
+                     BorderThickness="0" Background="Transparent" />
+        </ui:Card>
+    </Grid>
+</Page>

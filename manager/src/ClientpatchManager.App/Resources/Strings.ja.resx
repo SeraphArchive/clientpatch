@@ -1,0 +1,412 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="appTitle" xml:space="preserve">
+    <value>clientpatch マネージャー</value>
+  </data>
+  <data name="navHome" xml:space="preserve">
+    <value>ホーム</value>
+  </data>
+  <data name="navVersion" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="navModules" xml:space="preserve">
+    <value>モジュール</value>
+  </data>
+  <data name="navPlugins" xml:space="preserve">
+    <value>BepInEx プラグイン</value>
+  </data>
+  <data name="navInterop" xml:space="preserve">
+    <value>相互運用</value>
+  </data>
+  <data name="navLogs" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="navSettings" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="homeTitle" xml:space="preserve">
+    <value>ホーム</value>
+  </data>
+  <data name="stGame" xml:space="preserve">
+    <value>ゲーム</value>
+  </data>
+  <data name="stPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="stServer" xml:space="preserve">
+    <value>LilyPad</value>
+  </data>
+  <data name="stBuild" xml:space="preserve">
+    <value>ビルド</value>
+  </data>
+  <data name="launch" xml:space="preserve">
+    <value>ゲームを起動</value>
+  </data>
+  <data name="viaSteam" xml:space="preserve">
+    <value>Steam から起動</value>
+  </data>
+  <data name="direct" xml:space="preserve">
+    <value>直接起動</value>
+  </data>
+  <data name="openFolder" xml:space="preserve">
+    <value>ゲームフォルダー</value>
+  </data>
+  <data name="healthTitle" xml:space="preserve">
+    <value>モジュール</value>
+  </data>
+  <data name="hLilypad" xml:space="preserve">
+    <value>LilyPad リダイレクト</value>
+  </data>
+  <data name="hSteam" xml:space="preserve">
+    <value>Steam ブリッジ</value>
+  </data>
+  <data name="ok" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="off" xml:space="preserve">
+    <value>無効</value>
+  </data>
+  <data name="verTitle" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="verCurrent" xml:space="preserve">
+    <value>現在</value>
+  </data>
+  <data name="verLatest" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="verChannel" xml:space="preserve">
+    <value>チャンネル</value>
+  </data>
+  <data name="chStable" xml:space="preserve">
+    <value>安定版</value>
+  </data>
+  <data name="chBeta" xml:space="preserve">
+    <value>ベータ</value>
+  </data>
+  <data name="updateNow" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="upToDate" xml:space="preserve">
+    <value>最新</value>
+  </data>
+  <data name="needUpdate" xml:space="preserve">
+    <value>更新あり</value>
+  </data>
+  <data name="compPatch" xml:space="preserve">
+    <value>clientpatch</value>
+  </data>
+  <data name="compLang" xml:space="preserve">
+    <value>言語パック</value>
+  </data>
+  <data name="compBepin" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="bepinNote" xml:space="preserve">
+    <value>bepinex モジュール有効時に管理</value>
+  </data>
+  <data name="backupNote" xml:space="preserve">
+    <value>更新前に version.dll と設定をバックアップ</value>
+  </data>
+  <data name="rollback" xml:space="preserve">
+    <value>元に戻す</value>
+  </data>
+  <data name="modTitle" xml:space="preserve">
+    <value>モジュール</value>
+  </data>
+  <data name="tabForm" xml:space="preserve">
+    <value>フォーム</value>
+  </data>
+  <data name="tabToml" xml:space="preserve">
+    <value>TOML</value>
+  </data>
+  <data name="openInEditor" xml:space="preserve">
+    <value>テキストエディター</value>
+  </data>
+  <data name="save" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="secLilypad" xml:space="preserve">
+    <value>LilyPad リダイレクト</value>
+  </data>
+  <data name="fApi" xml:space="preserve">
+    <value>API ベース</value>
+  </data>
+  <data name="fPlatform" xml:space="preserve">
+    <value>プラットフォームベース</value>
+  </data>
+  <data name="fSigning" xml:space="preserve">
+    <value>署名</value>
+  </data>
+  <data name="secSteam" xml:space="preserve">
+    <value>Steam ブリッジ</value>
+  </data>
+  <data name="fSteamMode" xml:space="preserve">
+    <value>モード</value>
+  </data>
+  <data name="fCountry" xml:space="preserve">
+    <value>地域</value>
+  </data>
+  <data name="fUiLang" xml:space="preserve">
+    <value>UI 言語</value>
+  </data>
+  <data name="secTitlebar" xml:space="preserve">
+    <value>タイトルバー表示</value>
+  </data>
+  <data name="secRedir" xml:space="preserve">
+    <value>レジストリ分離</value>
+  </data>
+  <data name="plugTitle" xml:space="preserve">
+    <value>BepInEx プラグイン</value>
+  </data>
+  <data name="plugScan" xml:space="preserve">
+    <value>再スキャン</value>
+  </data>
+  <data name="plugOpen" xml:space="preserve">
+    <value>プラグインフォルダー</value>
+  </data>
+  <data name="plugNeedBepin" xml:space="preserve">
+    <value>bepinex モジュールが必要</value>
+  </data>
+  <data name="interopTitle" xml:space="preserve">
+    <value>相互運用</value>
+  </data>
+  <data name="interopOutdated" xml:space="preserve">
+    <value>インストール済みビルドの相互運用アセンブリが古い</value>
+  </data>
+  <data name="interopCurrentFmt" xml:space="preserve">
+    <value>相互運用アセンブリは最新（{0}、{1} 個）</value>
+  </data>
+  <data name="interopCheck" xml:space="preserve">
+    <value>確認</value>
+  </data>
+  <data name="interopGen" xml:space="preserve">
+    <value>オフライン生成</value>
+  </data>
+  <data name="interopGenRun" xml:space="preserve">
+    <value>生成中</value>
+  </data>
+  <data name="stepUnpack" xml:space="preserve">
+    <value>senbei 静的アンパック</value>
+  </data>
+  <data name="stepUnpackD" xml:space="preserve">
+    <value>ディスクから GameAssembly と metadata を復号</value>
+  </data>
+  <data name="stepDump" xml:space="preserve">
+    <value>Il2CppDumper</value>
+  </data>
+  <data name="stepDumpD" xml:space="preserve">
+    <value>FieldOffset 付き DummyDll を生成</value>
+  </data>
+  <data name="stepGen" xml:space="preserve">
+    <value>Il2CppInterop.CLI</value>
+  </data>
+  <data name="stepGenD" xml:space="preserve">
+    <value>相互運用アセンブリを生成</value>
+  </data>
+  <data name="logTitle" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="logClear" xml:space="preserve">
+    <value>クリア</value>
+  </data>
+  <data name="logOpenFile" xml:space="preserve">
+    <value>ログファイル</value>
+  </data>
+  <data name="logFollow" xml:space="preserve">
+    <value>自動スクロール</value>
+  </data>
+  <data name="setTitle" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="setGamePath" xml:space="preserve">
+    <value>ゲームフォルダー</value>
+  </data>
+  <data name="setFeed" xml:space="preserve">
+    <value>配布フィード</value>
+  </data>
+  <data name="setLaunch" xml:space="preserve">
+    <value>起動方法</value>
+  </data>
+  <data name="setLang" xml:space="preserve">
+    <value>表示言語</value>
+  </data>
+  <data name="setTheme" xml:space="preserve">
+    <value>テーマ</value>
+  </data>
+  <data name="setAuto" xml:space="preserve">
+    <value>起動時に更新を確認</value>
+  </data>
+  <data name="setBackup" xml:space="preserve">
+    <value>変更前にバックアップ</value>
+  </data>
+  <data name="thSystem" xml:space="preserve">
+    <value>システム</value>
+  </data>
+  <data name="thLight" xml:space="preserve">
+    <value>ライト</value>
+  </data>
+  <data name="thDark" xml:space="preserve">
+    <value>ダーク</value>
+  </data>
+  <data name="langSystem" xml:space="preserve">
+    <value>システム</value>
+  </data>
+  <data name="detected" xml:space="preserve">
+    <value>検出済み</value>
+  </data>
+  <data name="browse" xml:space="preserve">
+    <value>参照</value>
+  </data>
+  <data name="statusNotDeployed" xml:space="preserve">
+    <value>未展開</value>
+  </data>
+  <data name="statusGameOnly" xml:space="preserve">
+    <value>ゲームのみ</value>
+  </data>
+  <data name="statusNotFound" xml:space="preserve">
+    <value>未検出</value>
+  </data>
+  <data name="valueUnknown" xml:space="preserve">
+    <value>不明</value>
+  </data>
+  <data name="stServerV" xml:space="preserve">
+    <value>接続可能</value>
+  </data>
+  <data name="tomlValid" xml:space="preserve">
+    <value>有効</value>
+  </data>
+  <data name="serverUnreachable" xml:space="preserve">
+    <value>接続不可</value>
+  </data>
+  <data name="launchError" xml:space="preserve">
+    <value>ゲームを起動できない</value>
+  </data>
+  <data name="healthNote" xml:space="preserve">
+    <value>状態は設定から。ログなし</value>
+  </data>
+  <data name="verChecking" xml:space="preserve">
+    <value>確認中</value>
+  </data>
+  <data name="verError" xml:space="preserve">
+    <value>配布フィードに接続できない</value>
+  </data>
+  <data name="verNoBackups" xml:space="preserve">
+    <value>バックアップなし</value>
+  </data>
+  <data name="modSaved" xml:space="preserve">
+    <value>保存済み</value>
+  </data>
+  <data name="plugEmpty" xml:space="preserve">
+    <value>プラグインなし</value>
+  </data>
+  <data name="logEmpty" xml:space="preserve">
+    <value>ログファイルなし</value>
+  </data>
+  <data name="handoffTitle" xml:space="preserve">
+    <value>clientpatch 相互運用設定</value>
+  </data>
+  <data name="handoffRunning" xml:space="preserve">
+    <value>ランタイムダンプから相互運用を生成中</value>
+  </data>
+  <data name="handoffDone" xml:space="preserve">
+    <value>相互運用を生成しました</value>
+  </data>
+  <data name="handoffFailed" xml:space="preserve">
+    <value>相互運用の生成に失敗しました</value>
+  </data>
+  <data name="handoffRelaunching" xml:space="preserve">
+    <value>ゲームを再起動しています</value>
+  </data>
+  <data name="handoffNoGameDir" xml:space="preserve">
+    <value>相互運用を生成しました。マネージャーか Steam から起動してください。</value>
+  </data>
+  <data name="stepInstall" xml:space="preserve">
+    <value>BepInEx</value>
+  </data>
+  <data name="stepInstallD" xml:space="preserve">
+    <value>MOD プラットフォームをダウンロードして展開</value>
+  </data>
+  <data name="stepRelaunch" xml:space="preserve">
+    <value>ゲームを再起動</value>
+  </data>
+  <data name="stepRelaunchD" xml:space="preserve">
+    <value>ゲームを起動</value>
+  </data>
+  <data name="handoffPayload" xml:space="preserve">
+    <value>BepInEx をインストール中</value>
+  </data>
+  <data name="handoffPayloadFailed" xml:space="preserve">
+    <value>BepInEx のインストールに失敗しました</value>
+  </data>
+  <data name="handoffRelaunchFailed" xml:space="preserve">
+    <value>ゲームを再起動できませんでした</value>
+  </data>
+  <data name="verNoReleases" xml:space="preserve">
+    <value>フィードにリリースがありません</value>
+  </data>
+  <data name="verUpdating" xml:space="preserve">
+    <value>更新中</value>
+  </data>
+  <data name="fPublicKey" xml:space="preserve"><value>サーバー公開鍵</value></data>
+  <data name="secInteropDump" xml:space="preserve"><value>Interop ダンプ</value></data>
+  <data name="secReport" xml:space="preserve"><value>バージョン報告</value></data>
+</root>

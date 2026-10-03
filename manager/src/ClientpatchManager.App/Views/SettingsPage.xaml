@@ -1,0 +1,95 @@
+<Page x:Class="ClientpatchManager.App.Views.SettingsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+      d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      ScrollViewer.CanContentScroll="False"
+      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <ScrollViewer Padding="32,28" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <ui:TextBlock Text="{Binding [setTitle]}" FontTypography="Title" Margin="0,0,0,22" />
+
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <!-- Game folder -->
+                    <Grid Margin="0,6">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding [setGamePath]}" FontWeight="Medium" />
+                            <TextBlock Text="{Binding GameDir}" FontSize="12"
+                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                       TextTrimming="CharacterEllipsis" MaxWidth="520" HorizontalAlignment="Left" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ui:Button Content="{Binding [detected]}" Command="{Binding AutoDetectCommand}" Margin="0,0,8,0" />
+                            <ui:Button Content="{Binding [browse]}" Command="{Binding BrowseCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Launch method -->
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setLaunch]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <RadioButton Content="{Binding [viaSteam]}" GroupName="launch"
+                                         IsChecked="{Binding LaunchSteam, Mode=OneWay}"
+                                         Command="{Binding ChooseSteamCommand}" Margin="0,0,16,0" />
+                            <RadioButton Content="{Binding [direct]}" GroupName="launch"
+                                         IsChecked="{Binding LaunchSteam, Converter={StaticResource InverseBool}, Mode=OneWay}"
+                                         Command="{Binding ChooseDirectCommand}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Feed repo -->
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setFeed]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:TextBox Text="{Binding FeedRepo, UpdateSourceTrigger=LostFocus}" HorizontalAlignment="Right"
+                                 MinWidth="300" />
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+
+            <ui:Card>
+                <StackPanel>
+                    <!-- Interface language -->
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setLang]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ComboBox HorizontalAlignment="Right" MinWidth="160"
+                                  SelectedValue="{Binding Language}" SelectedValuePath="Tag">
+                            <ComboBoxItem Tag="system" Content="{Binding [langSystem]}" />
+                            <ComboBoxItem Tag="zh-Hans" Content="简体中文" />
+                            <ComboBoxItem Tag="zh-Hant" Content="繁體中文" />
+                            <ComboBoxItem Tag="en" Content="English" />
+                            <ComboBoxItem Tag="ja" Content="日本語" />
+                            <ComboBoxItem Tag="ko" Content="한국어" />
+                        </ComboBox>
+                    </Grid>
+
+                    <!-- Theme -->
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setTheme]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ComboBox HorizontalAlignment="Right" MinWidth="160"
+                                  SelectedValue="{Binding ThemeToken}" SelectedValuePath="Tag">
+                            <ComboBoxItem Tag="system" Content="{Binding [thSystem]}" />
+                            <ComboBoxItem Tag="light" Content="{Binding [thLight]}" />
+                            <ComboBoxItem Tag="dark" Content="{Binding [thDark]}" />
+                        </ComboBox>
+                    </Grid>
+
+                    <!-- Toggles -->
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setAuto]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding CheckOnLaunch}" />
+                    </Grid>
+                    <Grid Margin="0,6">
+                        <TextBlock Text="{Binding [setBackup]}" FontWeight="Medium" VerticalAlignment="Center" />
+                        <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding BackupBeforeChanges}" />
+                    </Grid>
+                </StackPanel>
+            </ui:Card>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

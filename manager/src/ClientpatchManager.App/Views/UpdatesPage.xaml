@@ -1,0 +1,99 @@
+<Page x:Class="ClientpatchManager.App.Views.UpdatesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+      xmlns:vm="clr-namespace:ClientpatchManager.App.ViewModels"
+      d:DataContext="{d:DesignInstance Type=vm:UpdatesViewModel}"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      mc:Ignorable="d"
+      ScrollViewer.CanContentScroll="False"
+      TextElement.Foreground="{DynamicResource TextFillColorPrimaryBrush}">
+
+    <ScrollViewer Padding="32,28" VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+            <ui:TextBlock Text="{Binding [verTitle]}" FontTypography="Title" Margin="0,0,0,22" />
+
+            <!-- Current vs latest + channel -->
+            <ui:Card Margin="0,0,0,14">
+                <StackPanel>
+                    <Grid Margin="0,6">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="clientpatch" FontWeight="SemiBold" />
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Text="{Binding [verCurrent]}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{Binding CurrentVersion}" Margin="6,0,20,0" />
+                                <TextBlock Text="{Binding [verLatest]}"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{Binding LatestVersion}" Margin="6,0,0,0" />
+                            </StackPanel>
+                        </StackPanel>
+                        <ui:Button Appearance="Primary" Icon="{ui:SymbolIcon ArrowDownload24}"
+                                   Content="{Binding [updateNow]}" Command="{Binding UpdateCommand}"
+                                   HorizontalAlignment="Right"
+                                   IsEnabled="{Binding UpdateAvailable}" />
+                    </Grid>
+                    <Grid Margin="0,8,0,4">
+                        <TextBlock Text="{Binding [verChannel]}" VerticalAlignment="Center" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <RadioButton Content="{Binding [chStable]}" GroupName="chan"
+                                         IsChecked="{Binding ChannelStable, Mode=OneWay}"
+                                         Command="{Binding ChooseStableCommand}" Margin="0,0,16,0" />
+                            <RadioButton Content="{Binding [chBeta]}" GroupName="chan"
+                                         IsChecked="{Binding ChannelStable, Converter={StaticResource InverseBool}, Mode=OneWay}"
+                                         Command="{Binding ChooseBetaCommand}" />
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                        <ui:ProgressRing IsIndeterminate="True" Width="16" Height="16"
+                                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                        <TextBlock Text="{Binding StatusMessage}" Margin="8,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </ui:Card>
+
+            <!-- Component list (hidden until a successful feed query fills it) -->
+            <ui:Card Margin="0,0,0,14"
+                     Visibility="{Binding HasComponents, Converter={StaticResource BoolToVisibility}}">
+                <ItemsControl ItemsSource="{Binding Components}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,6">
+                                <StackPanel VerticalAlignment="Center">
+                                    <StackPanel.Style>
+                                        <Style TargetType="StackPanel">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Meaningful}" Value="False">
+                                                    <Setter Property="TextElement.Foreground"
+                                                            Value="{DynamicResource TextFillColorTertiaryBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </StackPanel.Style>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding Detail}" FontSize="12"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                                <ui:TextBlock Text="{Binding StatusText}" HorizontalAlignment="Right"
+                                              VerticalAlignment="Center" FontTypography="Caption" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ui:Card>
+
+            <!-- Backup / rollback -->
+            <ui:InfoBar Severity="Informational" IsOpen="True" IsClosable="False">
+                <ui:InfoBar.Message>
+                    <Binding Path="BackupSummary" />
+                </ui:InfoBar.Message>
+                <ui:InfoBar.Content>
+                    <ui:Button Content="{Binding [rollback]}" Command="{Binding RollbackCommand}"
+                               IsEnabled="{Binding HasBackups}" Margin="0,8,0,4" HorizontalAlignment="Left" />
+                </ui:InfoBar.Content>
+            </ui:InfoBar>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

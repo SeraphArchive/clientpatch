@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <!-- One default version for all managed projects; release builds override it. -->
+    <Version>$([System.Text.RegularExpressions.Regex]::Match($([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)Cargo.toml')), '(?m)^version\s*=\s*&quot;([^&quot;]+)&quot;').Groups[1].Value)</Version>
+  </PropertyGroup>
+</Project>
