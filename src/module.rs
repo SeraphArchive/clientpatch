@@ -70,9 +70,10 @@ pub trait Module {
 /// loading (YAGNI).
 pub fn registry() -> Vec<Box<dyn Module>> {
     vec![
+        Box::new(crate::modules::diagnostics::Diagnostics),
         Box::new(crate::modules::steam::Steam),
         Box::new(crate::modules::lilypad::Lilypad),
-        Box::new(crate::modules::regredirect::RegRedirect),
+        Box::new(crate::modules::isolation::Isolation),
         Box::new(crate::modules::titlebar::Titlebar),
         Box::new(crate::modules::interopdump::InteropDump),
         // Last in the main pass: bepinex may block on dump+generate and restart

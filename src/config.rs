@@ -6,12 +6,23 @@ use std::path::Path;
 pub struct Config {
     #[serde(default)]
     pub loader: Loader,
+    pub diagnostics: Option<Diagnostics>,
     pub lilypad: Option<Lilypad>,
-    pub regredirect: Option<RegRedirect>,
+    pub isolation: Option<Isolation>,
     pub titlebar: Option<Titlebar>,
     pub steam: Option<Steam>,
     pub interopdump: Option<InteropDump>,
     pub bepinex: Option<Bepinex>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct Diagnostics {
+    #[serde(default)]
+    pub enable: bool,
+    #[serde(default = "default_true")]
+    pub native_init: bool,
+    #[serde(default = "default_true")]
+    pub crash_context: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -66,24 +77,24 @@ fn default_signing() -> String {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct RegRedirect {
+pub struct Isolation {
     #[serde(default)]
     pub enable: bool,
-    /// Sibling key is HKCU\Software\wfs\HeavenBurnsRed.<suffix>.
-    #[serde(default = "default_reg_suffix")]
+    /// Shared profile suffix for isolated registry and file storage.
+    #[serde(default = "default_isolation_suffix")]
     pub suffix: String,
 }
 
-impl Default for RegRedirect {
+impl Default for Isolation {
     fn default() -> Self {
-        RegRedirect {
+        Isolation {
             enable: false,
-            suffix: default_reg_suffix(),
+            suffix: default_isolation_suffix(),
         }
     }
 }
 
-fn default_reg_suffix() -> String {
+fn default_isolation_suffix() -> String {
     "clientpatch".to_string()
 }
 
@@ -299,9 +310,10 @@ impl Config {
     }
     pub fn module_enabled(&self, name: &str) -> bool {
         match name {
+            "diagnostics" => self.diagnostics.as_ref().is_some_and(|m| m.enable),
             "lilypad" => self.lilypad.as_ref().is_some_and(|m| m.enable),
             "steam" => self.steam.as_ref().is_some_and(|m| m.enable),
-            "regredirect" => self.regredirect.as_ref().is_some_and(|m| m.enable),
+            "isolation" => self.isolation.as_ref().is_some_and(|m| m.enable),
             "titlebar" => self.titlebar.as_ref().is_some_and(|m| m.enable),
             "interopdump" => self.interopdump.as_ref().is_some_and(|m| m.enable),
             "bepinex" => self.bepinex.as_ref().is_some_and(|m| m.enable),
@@ -346,13 +358,9 @@ impl Config {
                 }
             }
         }
-        if let Some(rr) = self.regredirect.as_ref().filter(|rr| rr.enable) {
-            if rr.suffix.trim().is_empty() {
-                anyhow::bail!("regredirect.suffix is empty");
-            }
-            if rr.suffix.contains('\\') {
-                anyhow::bail!("regredirect.suffix must not contain a backslash");
-            }
+        if let Some(rr) = self.isolation.as_ref().filter(|rr| rr.enable) {
+            anyhow::ensure!(crate::modules::isolation::valid_suffix(&rr.suffix),
+                "isolation.suffix must be 1-64 ASCII letters, digits, _, - or interior single dots");
         }
         if let Some(st) = self.steam.as_mut().filter(|st| st.enable) {
             st.mode = st.mode.trim().to_string();
@@ -420,6 +428,9 @@ fn normalize_enable(value: &mut toml::Value) -> anyhow::Result<()> {
     let root = value
         .as_table_mut()
         .ok_or_else(|| anyhow::anyhow!("config must be a table"))?;
+    if let Some(legacy) = root.remove("regredirect") {
+        root.entry("isolation").or_insert(legacy);
+    }
     if let Some(report) = root.remove("report") {
         let parent = root.entry("lilypad").or_insert_with(|| {
             let mut table = toml::map::Map::new();
@@ -440,7 +451,7 @@ fn normalize_enable(value: &mut toml::Value) -> anyhow::Result<()> {
             items
                 .iter()
                 .map(|item| {
-                    item.as_str().map(str::to_owned).ok_or_else(|| {
+                    item.as_str().map(|name| if name == "regredirect" { "isolation" } else { name }.to_owned()).ok_or_else(|| {
                         anyhow::anyhow!("loader.modules must be an array of strings")
                     })
                 })
@@ -453,7 +464,7 @@ fn normalize_enable(value: &mut toml::Value) -> anyhow::Result<()> {
     for name in [
         "lilypad",
         "steam",
-        "regredirect",
+        "isolation",
         "titlebar",
         "interopdump",
         "bepinex",
@@ -522,6 +533,23 @@ signing = "noop"
 "#;
 
     #[test]
+    fn registry_only_config_migrates_to_one_isolation_module() {
+        for input in [
+            "[regredirect]\nenable=true\nsuffix='private.one'\n",
+            "regredirect={enabled=true,suffix='private.one'}",
+            "regredirect.enable=true\nregredirect.suffix='private.one'",
+            "[loader]\nmodules=['regredirect']\n[regredirect]\nsuffix='private.one'",
+        ] {
+            let cfg = Config::parse(input).unwrap();
+            assert!(cfg.module_enabled("isolation"));
+            assert_eq!(cfg.isolation.unwrap().suffix, "private.one");
+        }
+        let cfg = Config::parse("[regredirect]\nenable=true\nsuffix='old'\n[isolation]\nenable=false\nsuffix='new'").unwrap();
+        assert!(!cfg.module_enabled("isolation"));
+        assert_eq!(cfg.isolation.unwrap().suffix, "new");
+    }
+
+    #[test]
     fn parses_noop_config() {
         let c = Config::parse(NOOP).unwrap();
         assert!(c.module_enabled("lilypad"));
@@ -583,42 +611,42 @@ signing = "noop"
     }
 
     #[test]
-    fn parses_regredirect_and_titlebar() {
+    fn parses_isolation_and_titlebar() {
         let s = r#"
 [loader]
-modules = ["regredirect", "titlebar"]
-[regredirect]
+modules = ["isolation", "titlebar"]
+[isolation]
 suffix = "myserver"
 [titlebar]
 template = " [PATCH]"
 "#;
         let c = Config::parse(s).unwrap();
-        assert_eq!(c.regredirect.unwrap().suffix, "myserver");
+        assert_eq!(c.isolation.unwrap().suffix, "myserver");
         assert_eq!(c.titlebar.unwrap().template, " [PATCH]");
     }
 
     #[test]
     fn empty_tables_use_defaults() {
-        let c = Config::parse("[regredirect]\nenable=true\n[titlebar]\n").unwrap();
-        assert_eq!(c.regredirect.unwrap().suffix, "clientpatch");
+        let c = Config::parse("[isolation]\nenable=true\n[titlebar]\n").unwrap();
+        assert_eq!(c.isolation.unwrap().suffix, "clientpatch");
         assert_eq!(c.titlebar.unwrap().template, " — clientpatch → {api_host}");
     }
 
     #[test]
     fn absent_new_tables_are_none() {
         let c = Config::parse("[loader]\nmodules=[]\n").unwrap();
-        assert!(c.regredirect.is_none());
+        assert!(c.isolation.is_none());
         assert!(c.titlebar.is_none());
     }
 
     #[test]
-    fn empty_regredirect_suffix_is_rejected() {
-        assert!(Config::parse("[regredirect]\nenable=true\nsuffix=\"\"\n").is_err());
+    fn empty_isolation_suffix_is_rejected() {
+        assert!(Config::parse("[isolation]\nenable=true\nsuffix=\"\"\n").is_err());
     }
 
     #[test]
-    fn backslash_regredirect_suffix_is_rejected() {
-        assert!(Config::parse("[regredirect]\nenable=true\nsuffix=\"a\\\\b\"\n").is_err());
+    fn backslash_isolation_suffix_is_rejected() {
+        assert!(Config::parse("[isolation]\nenable=true\nsuffix=\"a\\\\b\"\n").is_err());
     }
 
     #[test]
@@ -791,11 +819,23 @@ enabled = true
     }
 
     #[test]
+    fn diagnostics_are_opt_in_and_switches_are_typed() {
+        assert!(!Config::parse("").unwrap().module_enabled("diagnostics"));
+        assert!(!Config::parse("[diagnostics]").unwrap().module_enabled("diagnostics"));
+        let cfg = Config::parse("[diagnostics]\nenable=true\ncrash_context=false").unwrap();
+        assert!(cfg.module_enabled("diagnostics"));
+        let diagnostics = cfg.diagnostics.unwrap();
+        assert!(diagnostics.native_init);
+        assert!(!diagnostics.crash_context);
+        assert!(Config::parse("[diagnostics]\nnative_init='yes'").is_err());
+    }
+
+    #[test]
     fn switches_require_booleans() {
         for name in [
             "lilypad",
             "steam",
-            "regredirect",
+            "isolation",
             "titlebar",
             "interopdump",
             "bepinex",
@@ -808,7 +848,7 @@ enabled = true
     #[test]
     fn shipped_switches_keep_optional_modules_explicitly_off() {
         let cfg = Config::parse(include_str!("../clientpatch.toml")).unwrap();
-        for name in ["lilypad", "steam", "regredirect", "titlebar"] {
+        for name in ["lilypad", "steam", "isolation", "titlebar"] {
             assert!(cfg.module_enabled(name));
         }
         assert!(!cfg.interopdump.unwrap().enable);

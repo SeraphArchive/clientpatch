@@ -392,7 +392,10 @@ fn module_at(addr: *mut c_void) -> String {
             return String::new();
         }
         let path = wide::utf16_to_string(&buf[..n.min(buf.len())]);
-        path.rsplit(['\\', '/']).next().unwrap_or(&path).to_string()
+        let name = path.rsplit(['\\', '/']).next().unwrap_or(&path);
+        if crate::modules::diagnostics::crash_context() {
+            format!("{name}+0x{:X} (base={h:p})", (addr as usize).saturating_sub(h as usize))
+        } else { name.to_string() }
     }
 }
 
@@ -410,10 +413,29 @@ fn handle_crash(info: *const EXCEPTION_POINTERS) {
     // reason lock, so reading it after logging here inverts the lock order.
     let redirect = crate::status::state();
     let reason = crate::status::reason();
+    let access = unsafe {
+        if code == 0xC000_0005 && !info.is_null() && !(*info).ExceptionRecord.is_null() {
+            let record = &*(*info).ExceptionRecord;
+            if record.NumberParameters >= 2 {
+                let operation = match record.ExceptionInformation[0] {
+                    0 => "read", 1 => "write", 8 => "execute", _ => "unknown",
+                };
+                format!(" access={operation} target=0x{:X}", record.ExceptionInformation[1])
+            } else { String::new() }
+        } else { String::new() }
+    };
     logging::line_try(
         "CRASH",
-        &format!("0x{code:08X} {name} at {addr:p} module={module} status={redirect:?}"),
+        &format!("0x{code:08X} {name} at {addr:p} module={module} status={redirect:?}{access}"),
     );
+    unsafe {
+        if crate::modules::diagnostics::crash_context() && !info.is_null() && !(*info).ContextRecord.is_null() {
+            let context = &*(*info).ContextRecord;
+            logging::line_try("CRASH", &format!(
+                "RIP=0x{:X} RSP=0x{:X} RAX=0x{:X} RCX=0x{:X}",
+                context.Rip, context.Rsp, context.Rax, context.Rcx));
+        }
+    }
 
     // Stack overflow: MessageBox needs stack. Just die.
     if code == 0xC000_00FD {
@@ -424,7 +446,7 @@ fn handle_crash(info: *const EXCEPTION_POINTERS) {
     let reason_line = if reason.is_empty() {
         String::new()
     } else {
-        format!("reason = {reason}\n")
+        format!("last redirect observation = {reason}\n")
     };
     let body = format!(
         "clientpatch caught a crash.\n\n\

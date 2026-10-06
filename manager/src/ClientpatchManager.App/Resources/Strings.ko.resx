@@ -211,8 +211,11 @@
   <data name="secTitlebar" xml:space="preserve">
     <value>제목 표시줄 표시</value>
   </data>
-  <data name="secRedir" xml:space="preserve">
-    <value>레지스트리 격리</value>
+  <data name="secIsolation" xml:space="preserve">
+    <value>데이터 격리</value>
+  </data>
+  <data name="isolationHelp" xml:space="preserve">
+    <value>로그인 정보, 저장 데이터 및 로컬 설정을 분리합니다. 처음에는 다시 로그인하거나 데이터를 이전해야 합니다. 기존 데이터는 유지됩니다.</value>
   </data>
   <data name="plugTitle" xml:space="preserve">
     <value>BepInEx 플러그인</value>

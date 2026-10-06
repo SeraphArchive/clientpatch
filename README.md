@@ -1,6 +1,6 @@
 # clientpatch
 
-A mod loader and manager for Heaven Burns Red, providing server redirection, registry isolation, BepInEx support and more.
+A mod loader and manager for Heaven Burns Red, providing server redirection, profile isolation, BepInEx support and more.
 
 ## Usage
 

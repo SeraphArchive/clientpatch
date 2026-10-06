@@ -222,7 +222,9 @@ mod hooks {
                 logging::line("PAYINIT", &format!("app_id={id:?} app_secret={sec:?}"));
             }
         });
-        match crate::hook::no_panic(None, || rewrite_wide(config_json)) {
+        let started = crate::modules::diagnostics::native_init().then(std::time::Instant::now);
+        if started.is_some() { logging::line("DIAG", "PAYMENT_Initialize enter"); }
+        let result = match crate::hook::no_panic(None, || rewrite_wide(config_json)) {
             Some(buf) => {
                 crate::hook::no_panic_void(|| crate::status::mark_live("PAYMENT_Initialize"));
                 detour.call(app_id, app_secret, buf.as_ptr())
@@ -231,7 +233,16 @@ mod hooks {
                 crate::hook::no_panic_void(|| observe_init_payload(config_json));
                 detour.call(app_id, app_secret, config_json)
             }
-        }
+        };
+        crate::hook::no_panic_void(|| {
+            let Some(started) = started else { return; };
+            let module = unsafe { GetModuleHandleA(c"unity_gamelib_wrapper.dll".as_ptr().cast()) };
+            logging::line("DIAG", &format!(
+                "PAYMENT_Initialize return={result} initialized={} elapsed_ms={}",
+                already_initialized(module), started.elapsed().as_millis()));
+            unsafe { crate::modules::diagnostics::observe_native_console(); }
+        });
+        result
     }
 
     // Debug capture: log the exact (code, password) C# hands to the native

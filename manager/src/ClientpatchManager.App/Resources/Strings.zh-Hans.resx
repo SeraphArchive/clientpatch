@@ -211,8 +211,11 @@
   <data name="secTitlebar" xml:space="preserve">
     <value>标题栏标记</value>
   </data>
-  <data name="secRedir" xml:space="preserve">
-    <value>注册表隔离</value>
+  <data name="secIsolation" xml:space="preserve">
+    <value>数据隔离</value>
+  </data>
+  <data name="isolationHelp" xml:space="preserve">
+    <value>隔离登录凭据、存档和本地设置。首次使用需重新登录或引继，原有数据会保留。</value>
   </data>
   <data name="plugTitle" xml:space="preserve">
     <value>BepInEx 插件</value>

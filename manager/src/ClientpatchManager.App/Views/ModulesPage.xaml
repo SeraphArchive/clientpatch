@@ -112,8 +112,8 @@
                             <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding TitlebarEnabled}" />
                         </Grid>
                         <Grid Margin="0,6">
-                            <TextBlock Text="{Binding [secRedir]}" VerticalAlignment="Center" />
-                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding RegRedirectEnabled}" />
+                            <TextBlock Text="{Binding [secIsolation]}" VerticalAlignment="Center" />
+                            <ui:ToggleSwitch HorizontalAlignment="Right" IsChecked="{Binding IsolationEnabled}" ToolTip="{Binding [isolationHelp]}" />
                         </Grid>
                         <Grid Margin="0,6">
                             <TextBlock Text="BepInEx" VerticalAlignment="Center" />

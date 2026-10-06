@@ -8,12 +8,12 @@ internal static class ConfigValidation {
     internal static TomlTable Parse(string text) {
         var root = TomlSerializer.Deserialize<TomlTable>(text) ?? new TomlTable();
         NormalizeEnable(root);
-        foreach (var section in new[] { "loader", "lilypad", "steam", "regredirect", "titlebar", "interopdump", "bepinex", "lilypad.report" }) {
+        foreach (var section in new[] { "loader", "lilypad", "steam", "isolation", "titlebar", "interopdump", "bepinex", "lilypad.report" }) {
             var table = GetTable(root, section);
             if (table is null) continue;
             var strings = section switch {
                 "loader" => "log", "lilypad" => "api_base platform_base signing server_public_key_pem",
-                "steam" => "mode ip_country ui_language", "regredirect" => "suffix", "titlebar" => "template",
+                "steam" => "mode ip_country ui_language", "isolation" => "suffix", "titlebar" => "template",
                 "interopdump" => "out_dir", "lilypad.report" => "url", "bepinex" => "root doorstop url interopgen manager launch_method", _ => ""
             };
             var bools = section switch {
@@ -40,10 +40,13 @@ internal static class ConfigValidation {
                     if (!active) break;
                     if (S("mode", "auto").Trim().ToLowerInvariant() is not ("off" or "false" or "none" or "skip_restart" or "skip-restart" or "skip" or "stub" or "emu" or "offline" or "auto")) throw new FormatException("steam.mode is unsupported");
                     NonEmpty("ip_country", "JP"); NonEmpty("ui_language", "japanese"); break;
-                case "regredirect":
+                case "isolation":
                     if (!active) break;
-                    NonEmpty("suffix", "clientpatch");
-                    if (S("suffix", "clientpatch").Contains('\\')) throw new FormatException("regredirect.suffix must not contain a backslash"); break;
+                    var suffix = S("suffix", "clientpatch");
+                    if (suffix.Length is < 1 or > 64 || suffix.StartsWith('.') || suffix.EndsWith('.') || suffix.Contains("..")
+                        || suffix.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not ('_' or '-' or '.')))
+                        throw new FormatException("isolation.suffix must be 1-64 ASCII letters, digits, _, - or interior single dots");
+                    break;
                 case "interopdump": if (active) NonEmpty("out_dir", "interop"); break;
                 case "bepinex":
                     NonEmpty("root", "BepInEx"); NonEmpty("doorstop", "doorstop.dll"); NonEmpty("interopgen", "clientpatch\\interopgen.ps1");
@@ -63,6 +66,8 @@ internal static class ConfigValidation {
     }
 
     static void NormalizeEnable(TomlTable root) {
+        if (root.Remove("regredirect", out var legacyIsolation) && !root.ContainsKey("isolation"))
+            root["isolation"] = legacyIsolation;
         if (root.TryGetValue("report", out var legacyReport)) {
             root.Remove("report");
             if (!root.ContainsKey("lilypad")) root["lilypad"] = new TomlTable { ["enable"] = false };
@@ -72,9 +77,9 @@ internal static class ConfigValidation {
         if (root.TryGetValue("loader", out var loaderValue) && loaderValue is TomlTable loader && loader.TryGetValue("modules", out var items)) {
             if (items is not TomlArray array || array.Any(item => item is not string))
                 throw new FormatException("loader.modules must be an array of strings");
-            legacy = array.Cast<string>().ToList(); loader.Remove("modules");
+            legacy = array.Cast<string>().Select(name => name == "regredirect" ? "isolation" : name).ToList(); loader.Remove("modules");
         }
-        foreach (var name in new[] { "lilypad", "steam", "regredirect", "titlebar", "interopdump", "bepinex" }) {
+        foreach (var name in new[] { "lilypad", "steam", "isolation", "titlebar", "interopdump", "bepinex" }) {
             if (!root.ContainsKey(name) && name is not ("lilypad" or "bepinex") && legacy?.Contains(name) == true)
                 root[name] = new TomlTable();
             if (!root.TryGetValue(name, out var value) || value is not TomlTable table) continue;

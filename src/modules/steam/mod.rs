@@ -60,6 +60,9 @@ pub enum Resolved {
 #[derive(Default)]
 pub struct Steam;
 
+#[cfg(windows)]
+pub(super) fn stub_active() -> bool { hooks::stub_active() }
+
 impl Module for Steam {
     fn name(&self) -> &str {
         "steam"
@@ -92,6 +95,7 @@ mod hooks {
     const MODE_SKIP: u8 = 1;
     const MODE_STUB: u8 = 2;
     static MODE: AtomicU8 = AtomicU8::new(MODE_OFF);
+    pub(super) fn stub_active() -> bool { MODE.load(Ordering::SeqCst) == MODE_STUB }
     static EXPORTS_HOOKED: AtomicBool = AtomicBool::new(false);
     /// steam_api64 handle; GPA rewrite is restricted to this module.
     static STEAM_MOD: std::sync::atomic::AtomicPtr<core::ffi::c_void> =

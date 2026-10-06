@@ -77,7 +77,7 @@ pub fn init_early(cfg: &Config, dll_dir: &Path) -> anyhow::Result<()> {
     };
 
     // POST on a detached thread: the early pass must return fast so the other
-    // early hooks (regredirect, titlebar) install before the game first touches
+    // early hooks (isolation, titlebar) install before the game first touches
     // their subsystems. The report only needs to land before /api/app/start,
     // which is many seconds later. logging::line is thread-safe.
     std::thread::spawn(move || {

@@ -93,11 +93,12 @@ mod entry {
         if !eq_ascii_ignore_case(&buf[start..n], "HeavenBurnsRed.exe") {
             return false;
         }
+        true
+    }
+
+    pub(crate) unsafe fn is_helper_process() -> bool {
         let cmd = GetCommandLineW();
-        if cmd.is_null() {
-            return true;
-        }
-        !wide_has_cef_type(cmd)
+        !cmd.is_null() && wide_has_cef_type(cmd)
     }
 
     fn eq_ascii_ignore_case(units: &[u16], ascii: &str) -> bool {

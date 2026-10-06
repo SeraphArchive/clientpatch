@@ -46,9 +46,9 @@ public sealed partial class ModulesViewModel : LocalizedViewModel
     [ObservableProperty] private string _country = "";
     [ObservableProperty] private string _uiLanguage = "";
 
-    // Titlebar / RegRedirect
+    // Titlebar / Isolation
     [ObservableProperty] private bool _titlebarEnabled;
-    [ObservableProperty] private bool _regRedirectEnabled;
+    [ObservableProperty] private bool _isolationEnabled;
     [ObservableProperty] private bool _interopDumpEnabled;
     [ObservableProperty] private bool _bepInExEnabled;
     [ObservableProperty] private bool _reportEnabled;
@@ -125,7 +125,7 @@ public sealed partial class ModulesViewModel : LocalizedViewModel
         UiLanguage = cfg.Steam.UiLanguage;
 
         TitlebarEnabled = cfg.Titlebar.Enabled;
-        RegRedirectEnabled = cfg.RegRedirect.Enabled;
+        IsolationEnabled = cfg.Isolation.Enabled;
         InteropDumpEnabled = cfg.InteropDump?.Enabled == true;
         BepInExEnabled = cfg.BepInEx?.Enabled == true;
         ReportEnabled = cfg.Lilypad.Report.Enabled;
@@ -242,7 +242,7 @@ public sealed partial class ModulesViewModel : LocalizedViewModel
         };
         cfg.Steam = new SteamSection(SteamEnabled, SteamMode, Country, UiLanguage);
         cfg.Titlebar = cfg.Titlebar with { Enabled = TitlebarEnabled };
-        cfg.RegRedirect = cfg.RegRedirect with { Enabled = RegRedirectEnabled };
+        cfg.Isolation = cfg.Isolation with { Enabled = IsolationEnabled };
         cfg.InteropDump = (cfg.InteropDump ?? new(false)) with { Enabled = InteropDumpEnabled };
         cfg.BepInEx = (cfg.BepInEx ?? new(false)) with { Enabled = BepInExEnabled };
 

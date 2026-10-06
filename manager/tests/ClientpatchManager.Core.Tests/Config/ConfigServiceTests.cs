@@ -2,6 +2,48 @@ using Xunit;
 using ClientpatchManager.Core.Config;
 
 public class ConfigServiceTests {
+    [Fact] public void Diagnostics_configuration_survives_gui_edits() {
+        const string text = "[diagnostics]\nenable=true # manual\nnative_init=false\ncrash_context=true\n";
+        var service = new ConfigService();
+        var config = service.Load(text);
+        config.Steam = config.Steam with { Enabled = true };
+        var saved = service.ApplyToText(text, config);
+        Assert.Contains(text.TrimEnd(), saved);
+    }
+    [Theory]
+    [InlineData("[regredirect]\nenable=true # kept\nsuffix='private.one'\n")]
+    [InlineData("regredirect={enabled=true,suffix='private.one'} # kept\n")]
+    [InlineData("regredirect.enable=true # kept\nregredirect.suffix='private.one'\n")]
+    [InlineData("[loader]\nmodules=['regredirect']\n[regredirect]\nsuffix='private.one' # kept\n")]
+    public void Registry_only_config_migrates_without_losing_profile_or_comments(string text) {
+        var service = new ConfigService(); var cfg = service.Load(text);
+        Assert.True(cfg.Isolation.Enabled); Assert.Equal("private.one", cfg.Isolation.Suffix);
+        var saved = service.ApplyToText(text, cfg);
+        Assert.DoesNotContain("regredirect", saved); Assert.Contains("# kept", saved);
+        Assert.Equal(cfg.Isolation, service.Load(saved).Isolation);
+        Assert.Equal(saved, service.ApplyToText(saved, service.Load(saved)));
+    }
+
+    [Fact]
+    public void Explicit_isolation_section_wins_over_legacy() {
+        const string text = "[regredirect]\nenable=true\nsuffix='old'\n[isolation]\nenable=false\nsuffix='current' # kept\n";
+        var service = new ConfigService(); var cfg = service.Load(text);
+        Assert.False(cfg.Isolation.Enabled); Assert.Equal("current", cfg.Isolation.Suffix);
+        var saved = service.ApplyToText(text, cfg);
+        Assert.DoesNotContain("regredirect", saved); Assert.Contains("# kept", saved);
+        Assert.Equal(cfg.Isolation, service.Load(saved).Isolation);
+    }
+
+    [Theory]
+    [InlineData("../other")]
+    [InlineData("trailing.")]
+    [InlineData("hidden:stream")]
+    [InlineData("a..b")]
+    public void Isolation_rejects_ambiguous_profile_paths(string suffix) {
+        var service = new ConfigService();
+        Assert.NotEmpty(service.RawValidate($"[isolation]\nenable=true\nsuffix='{suffix}'\n"));
+    }
+
     const string Sample = """
         # top comment
         [loader]
@@ -78,7 +120,7 @@ public class ConfigServiceTests {
         Assert.True(c.Steam.Enabled);
         Assert.False(c.Lilypad.Enabled);
         Assert.False(c.Titlebar.Enabled);
-        Assert.False(c.RegRedirect.Enabled);
+        Assert.False(c.Isolation.Enabled);
     }
 
     [Fact] public void ApplyToText_rejects_empty_required_values() {
@@ -115,12 +157,12 @@ public class ConfigServiceTests {
         cfg.Lilypad = new(true, "http://api/", "http://platform", "noop") { Report = cfg.Lilypad.Report };
         cfg.Steam = cfg.Steam with { Enabled = true };
         cfg.Titlebar = cfg.Titlebar with { Enabled = true };
-        cfg.RegRedirect = cfg.RegRedirect with { Enabled = true };
+        cfg.Isolation = cfg.Isolation with { Enabled = true };
         cfg.BepInEx = cfg.BepInEx! with { Enabled = true };
         cfg.InteropDump = cfg.InteropDump! with { Enabled = true };
         cfg.Lilypad = cfg.Lilypad with { Report = cfg.Lilypad.Report with { Enabled = false } };
         var saved = service.ApplyToText(text, cfg); var loaded = service.Load(saved);
-        foreach (var section in new[] { "lilypad", "steam", "titlebar", "regredirect", "bepinex", "interopdump" }) Assert.True(loaded.IsEnabled(section), section + ": " + saved);
+        foreach (var section in new[] { "lilypad", "steam", "titlebar", "isolation", "bepinex", "interopdump" }) Assert.True(loaded.IsEnabled(section), section + ": " + saved);
         Assert.False(loaded.Lilypad.Report.Enabled); Assert.Equal("http://report/", loaded.Lilypad.Report.Url);
         Assert.Contains("# preserved", saved); Assert.Contains("auto_generate=false", saved); Assert.Contains("force=true", saved);
     }
@@ -158,7 +200,7 @@ public class ConfigServiceTests {
     [Theory]
     [InlineData("lilypad")]
     [InlineData("steam")]
-    [InlineData("regredirect")]
+    [InlineData("isolation")]
     [InlineData("titlebar")]
     [InlineData("interopdump")]
     [InlineData("bepinex")]
@@ -174,7 +216,7 @@ public class ConfigServiceTests {
     [Fact] public void Shipped_example_has_matching_defaults_and_survives_form_save() {
         var text = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "clientpatch.example.toml"));
         var service = new ConfigService(); var cfg = service.Load(text);
-        foreach (var name in new[] { "steam", "lilypad", "regredirect", "titlebar", "lilypad.report" }) Assert.True(cfg.IsEnabled(name));
+        foreach (var name in new[] { "steam", "lilypad", "isolation", "titlebar", "lilypad.report" }) Assert.True(cfg.IsEnabled(name));
         Assert.NotNull(cfg.InteropDump); Assert.NotNull(cfg.BepInEx);
         Assert.False(cfg.InteropDump.Enabled); Assert.False(cfg.BepInEx.Enabled);
         Assert.Equal(text, service.ApplyToText(text, cfg));

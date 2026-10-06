@@ -23,6 +23,7 @@ pub unsafe extern "system" fn init_thread(param: *mut core::ffi::c_void) -> u32 
 }
 
 unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
+    let helper = crate::entry::is_helper_process();
     let dir = dll_dir().unwrap_or_else(|| PathBuf::from("."));
     // Everything clientpatch owns lives under <game dir>/clientpatch. The game
     // dir itself holds only version.dll, BepInEx/, and the manager exe.
@@ -30,12 +31,13 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
 
     // Always-on debug aids (no config): a console window mirroring the log, and a
     // crash guard that shows a crash window + blocks UnityCrashHandler64.
-    logging::enable_console();
+    if !helper { logging::enable_console(); }
 
     // Config first, so its `log` key can pick the log filename.
     let cfg = match Config::load(&crate::module::resolve_data_path(&dir, Path::new("clientpatch.toml"))) {
         Ok(c) => c,
         Err(e) => {
+            if helper { return 0; }
             // No/invalid config: still init a log and load nothing.
             logging::init(&data, "clientpatch.log");
             crate::crashguard::install();
@@ -55,15 +57,32 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
         .unwrap_or_default()
         .to_string_lossy()
         .into_owned();
-    logging::init(&data, &log_name);
-    crate::crashguard::install();
-    logging::line("INFO", "clientpatch starting");
+    if !helper {
+        logging::init(&data, &log_name);
+        crate::crashguard::install();
+        logging::line("INFO", "clientpatch starting");
+    }
+
+    // Isolation precedes slow payload/interop checks and every server hook.
+    // Never continue into either service with only a subset of isolation armed.
+    if cfg.module_enabled("isolation") {
+        use crate::module::Module;
+        match std::panic::catch_unwind(std::panic::AssertUnwindSafe(||
+            crate::modules::isolation::Isolation.init_early(&cfg, &dir))) {
+            Ok(Ok(())) => {},
+            Ok(Err(e)) => crate::modules::isolation::stop(&e.to_string()),
+            Err(_) => crate::modules::isolation::stop("initialization panicked"),
+        }
+    }
+    // CEF runs the same executable. It needs the same profile routing, without
+    // initializing Steam, IL2CPP, platform hooks or another BepInEx instance.
+    if helper { return 0; }
 
     // Early pass: modules that must hook native APIs before the game first uses
-    // them (e.g. regredirect must beat Unity's first PlayerPrefs access). These
+    // them (e.g. isolation must beat Unity's first PlayerPrefs access). These
     // need no IL2CPP, so run them now — long before the runtime-ready gate.
     //
-    // bepinex goes FIRST even though it is last in the registry: doorstop must
+    // After isolation, bepinex goes first: doorstop must
     // be loaded before UnityPlayer resolves il2cpp_init (doorstop IAT-hooks
     // that GetProcAddress call; miss the window and BepInEx never boots), so
     // its early pass cannot wait behind the other modules' hook installs.
@@ -76,7 +95,7 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
         }
     }
     for m in &modules {
-        if m.name() != "bepinex" && cfg.module_enabled(m.name()) {
+        if m.name() != "bepinex" && m.name() != "isolation" && cfg.module_enabled(m.name()) {
             if let Err(e) = m.init_early(&cfg, &dir) {
                 logging::line("ERR", &format!("module '{}' early init failed: {e}", m.name()));
             }

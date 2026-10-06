@@ -3,6 +3,11 @@
 [loader]
 log = "clientpatch.log"
 
+[diagnostics]
+enable = false
+native_init = true
+crash_context = true
+
 [lilypad]
 enable = true
 api_base = "http://127.0.0.1:8443/"
@@ -14,7 +19,7 @@ neutralize_debugger_flag = false
 [lilypad.report]
 enable = true
 
-[regredirect]
+[isolation]
 enable = true
 suffix = "clientpatch"
 

@@ -46,7 +46,7 @@ public sealed class EditorAndUpdateTests : IDisposable {
     [Fact] public void Form_and_raw_tabs_save_all_module_switches_without_loader_array() {
         var vm = Editor();
         vm.LilypadEnabled = false; vm.SteamEnabled = true;
-        vm.TitlebarEnabled = true; vm.RegRedirectEnabled = true;
+        vm.TitlebarEnabled = true; vm.IsolationEnabled = true;
         vm.BepInExEnabled = true; vm.InteropDumpEnabled = true; vm.ReportEnabled = false;
         vm.ShowTomlTabCommand.Execute(null);
         var service = new ConfigService(); var cfg = service.Load(vm.RawToml);
@@ -61,7 +61,7 @@ public sealed class EditorAndUpdateTests : IDisposable {
         vm.SaveCommand.Execute(null);
         var saved = File.ReadAllText(ConfigPath); var loaded = service.Load(saved);
         Assert.False(loaded.Lilypad.Enabled); Assert.True(loaded.Steam.Enabled);
-        Assert.True(loaded.Titlebar.Enabled); Assert.True(loaded.RegRedirect.Enabled);
+        Assert.True(loaded.Titlebar.Enabled); Assert.True(loaded.Isolation.Enabled);
         Assert.False(loaded.BepInEx!.Enabled); Assert.False(loaded.InteropDump!.Enabled); Assert.False(loaded.Lilypad.Report.Enabled);
         Assert.DoesNotContain("modules=", saved.Replace(" ", ""));
     }

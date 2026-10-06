@@ -211,8 +211,11 @@
   <data name="secTitlebar" xml:space="preserve">
     <value>Title bar marker</value>
   </data>
-  <data name="secRedir" xml:space="preserve">
-    <value>Registry isolation</value>
+  <data name="secIsolation" xml:space="preserve">
+    <value>Profile isolation</value>
+  </data>
+  <data name="isolationHelp" xml:space="preserve">
+    <value>Separates login credentials, saves and local settings. The first use requires signing in again; existing data is kept.</value>
   </data>
   <data name="plugTitle" xml:space="preserve">
     <value>BepInEx Plugins</value>

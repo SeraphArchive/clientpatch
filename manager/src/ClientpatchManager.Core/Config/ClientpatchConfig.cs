@@ -6,14 +6,14 @@ public class ClientpatchConfig {
     public string? LoaderLog { get; set; }
     public LilypadSection Lilypad { get; set; } = new(false, "", "", "noop");
     public SteamSection Steam { get; set; } = new(false, "auto", "JP", "japanese");
-    public RegRedirectSection RegRedirect { get; set; } = new(false, "clientpatch");
+    public IsolationSection Isolation { get; set; } = new(false, "clientpatch");
     public TitlebarSection Titlebar { get; set; } = new(false, " — clientpatch → {api_host}");
     public BepInExSection? BepInEx { get; set; }
     public InteropDumpSection? InteropDump { get; set; }
 
     public bool IsEnabled(string section) => section switch {
         "lilypad" => Lilypad.Enabled, "steam" => Steam.Enabled,
-        "regredirect" => RegRedirect.Enabled, "titlebar" => Titlebar.Enabled,
+        "isolation" => Isolation.Enabled, "titlebar" => Titlebar.Enabled,
         "bepinex" => BepInEx?.Enabled == true, "interopdump" => InteropDump?.Enabled == true,
         "lilypad.report" => Lilypad.Report.Enabled, _ => false
     };
@@ -23,7 +23,7 @@ public record LilypadSection(bool Enabled, string ApiBase, string PlatformBase, 
     public ReportSection Report { get; init; } = new(true);
 }
 public record SteamSection(bool Enabled, string Mode, string Country, string UiLanguage);
-public record RegRedirectSection(bool Enabled, string Suffix);
+public record IsolationSection(bool Enabled, string Suffix);
 public record TitlebarSection(bool Enabled, string Template);
 public record BepInExSection(bool Enabled, string Root = "BepInEx", string Doorstop = "doorstop.dll");
 public record InteropDumpSection(bool Enabled, string OutDir = "interop");

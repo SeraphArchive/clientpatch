@@ -24,7 +24,7 @@ public sealed class ConfigService : IConfigService {
                 Report = new(B("lilypad.report", "enable", true), S("lilypad.report", "url", ""))
             },
             Steam = new(B("steam", "enable", false), S("steam", "mode", "auto"), S("steam", "ip_country", "JP"), S("steam", "ui_language", "japanese")),
-            RegRedirect = new(B("regredirect", "enable", false), S("regredirect", "suffix", "clientpatch")),
+            Isolation = new(B("isolation", "enable", false), S("isolation", "suffix", "clientpatch")),
             Titlebar = new(B("titlebar", "enable", false), S("titlebar", "template", " — clientpatch → {api_host}")),
             BepInEx = root.ContainsKey("bepinex") ? new(B("bepinex", "enable", false), S("bepinex", "root", "BepInEx"), S("bepinex", "doorstop", "doorstop.dll")) : null,
             InteropDump = new(B("interopdump", "enable", false), S("interopdump", "out_dir", "interop"))
@@ -35,6 +35,7 @@ public sealed class ConfigService : IConfigService {
         ThrowIfInvalid(doc);
 
         MigrateReport(doc);
+        MigrateIsolation(doc);
         RemoveLegacyFields(doc.KeyValues, "");
         foreach (var table in doc.Tables) RemoveLegacyFields(table.Items, KeyText(table.Name));
         foreach (var section in Sections) {
@@ -64,7 +65,7 @@ public sealed class ConfigService : IConfigService {
         catch (FormatException ex) { return ex.Message; }
     }
 
-    static readonly string[] Sections = { "lilypad", "steam", "regredirect", "titlebar", "interopdump", "bepinex", "lilypad.report" };
+    static readonly string[] Sections = { "lilypad", "steam", "isolation", "titlebar", "interopdump", "bepinex", "lilypad.report" };
     static readonly string[] Keys = { "enable", "api_base", "platform_base", "signing", "server_public_key_pem", "mode", "ip_country", "ui_language", "suffix", "template", "root", "doorstop", "out_dir", "url" };
 
     static void AddMissingFields(DocumentSyntax doc, ClientpatchConfig edited, ClientpatchConfig original) {
@@ -131,6 +132,26 @@ public sealed class ConfigService : IConfigService {
         }
     }
 
+    static void MigrateIsolation(DocumentSyntax doc) {
+        const string old = "regredirect", current = "isolation";
+        var hasCurrent = doc.Tables.Any(t => KeyText(t.Name) == current)
+            || DottedSection(doc, current) is not null || InlineSection(doc, current) is not null;
+        for (var i = doc.Tables.ChildrenCount - 1; i >= 0; i--) {
+            var table = doc.Tables.ElementAt(i);
+            if (KeyText(table.Name) != old) continue;
+            if (hasCurrent) { doc.Tables.RemoveChildAt(i); continue; }
+            var header = SyntaxParser.Parse("[isolation]\n", "clientpatch.toml", true).Tables.First();
+            var name = header.Name; header.Name = null; table.Name = name;
+        }
+        for (var i = doc.KeyValues.ChildrenCount - 1; i >= 0; i--) {
+            var field = doc.KeyValues.ElementAt(i); var key = KeyText(field.Key);
+            if (key != old && !key.StartsWith(old + ".", StringComparison.Ordinal)) continue;
+            if (hasCurrent) { doc.KeyValues.RemoveChildAt(i); continue; }
+            var parsed = SyntaxParser.Parse($"{current}{key[old.Length..]} = false\n", "clientpatch.toml", true).KeyValues.First();
+            var name = parsed.Key; parsed.Key = null; field.Key = name;
+        }
+    }
+
     static void AddField(DocumentSyntax doc, string section, string key, string literal) {
         var table = doc.Tables.FirstOrDefault(t => KeyText(t.Name) == section);
         if (table is null && DottedSection(doc, section) is { } dotted) {
@@ -184,7 +205,7 @@ public sealed class ConfigService : IConfigService {
 
     /// <summary>The desired scalar value for a managed key; validation rejects invalid edits.</summary>
     private static string? DesiredScalar(ClientpatchConfig c, string section, string key) {
-        if (key == "enable" && section is "lilypad" or "steam" or "regredirect" or "titlebar" or "interopdump" or "bepinex" or "lilypad.report")
+        if (key == "enable" && section is "lilypad" or "steam" or "isolation" or "titlebar" or "interopdump" or "bepinex" or "lilypad.report")
             return c.IsEnabled(section) ? "true" : "false";
         var value = (section, key) switch {
             ("lilypad", "api_base") => c.Lilypad.ApiBase,
@@ -194,7 +215,7 @@ public sealed class ConfigService : IConfigService {
             ("steam", "mode") => c.Steam.Mode,
             ("steam", "ip_country") => c.Steam.Country,
             ("steam", "ui_language") => c.Steam.UiLanguage,
-            ("regredirect", "suffix") => c.RegRedirect.Suffix,
+            ("isolation", "suffix") => c.Isolation.Suffix,
             ("titlebar", "template") => c.Titlebar.Template,
             ("interopdump", "out_dir") => c.InteropDump?.OutDir ?? "interop",
             ("bepinex", "root") => c.BepInEx?.Root ?? "BepInEx",

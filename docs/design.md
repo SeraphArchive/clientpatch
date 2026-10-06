@@ -7,7 +7,8 @@ This document describes implementation boundaries; it is not a user manual.
 
 ## Loader lifecycle
 
-`src/lib.rs` gates initialization to the game process and excludes its CEF helpers.
+`src/lib.rs` gates initialization to the game process. Its CEF helpers load only
+the isolation module, so browser-side storage uses the same profile.
 `DllMain` disables thread notifications and starts a worker; configuration parsing,
 runtime discovery, and hook installation run outside the loader lock.
 `src/version_proxy.rs` exports the Windows version APIs and resolves the real DLL
@@ -16,14 +17,20 @@ through the system directory obtained from Windows, avoiding a fixed installatio
 `src/bootstrap.rs` loads configuration and runs the module lifecycle defined in
 `src/module.rs`:
 
-1. Native early hooks run before IL2CPP discovery. BepInEx runs first in this pass
-   because Doorstop must intercept runtime initialization; registry and platform
-   hooks also need to precede the game's first use of those APIs.
+1. Isolation runs before other native early hooks, including payload checks.
+   BepInEx follows immediately because Doorstop must intercept runtime
+   initialization. Platform hooks also precede the first use of GameLib.
 2. Runtime readiness checks precede assembly enumeration. Corlib availability
    alone is insufficient; bootstrap also waits for the assembly count to stabilize.
    The IL2CPP early pass handles hooks that need to precede game initialization.
 3. The main pass installs runtime-dependent modules after the readiness gates.
    BepInEx runs last here because setup can generate interop and restart the game.
+
+Native library watchers queue notifications until the outermost load returns.
+Loads triggered by watcher code cannot synchronously reenter a watcher, and
+notifications received inside another DLL's initialization are delivered by a
+worker outside the loader callout. Deferred modules are pinned and their names
+checked before callbacks inspect their exports.
 
 The IL2CPP binding and detour state live for the process lifetime. Hook installation
 stores the trampoline before enabling the detour, and hook bodies fence Rust panics
@@ -35,15 +42,16 @@ loads no modules; diagnostics remain available.
 | Module | Responsibility | Source |
 | --- | --- | --- |
 | `steam` | Steam restart handling and optional native API stubs | `src/modules/steam/` |
+| `diagnostics` | Opt-in native initialization observations and crash context | `src/modules/diagnostics.rs` |
 | `lilypad` | API/platform origin redirection and response-signature handling | `src/modules/lilypad/` |
-| `regredirect` | Redirect the game's registry subtree to a separate sibling key | `src/modules/regredirect.rs` |
+| `isolation` | Isolate registry, Unity persistent data and native GameLib storage | `src/modules/isolation/` |
 | `titlebar` | Reflect observed redirect state in the game window title | `src/modules/titlebar.rs` |
 | `interopdump` | Capture runtime IL2CPP inputs and manage the per-build dump cache | `src/modules/interopdump/` |
 | `bepinex` | Coordinate Doorstop loading, payload setup, and interop currency | `src/modules/bepinex/` |
 
 Modules are registered at compile time and selected by `enable = true/false` in
 their own configuration sections. Missing switches default off; the shipped template
-explicitly enables Steam, Lilypad, registry isolation, and titlebar, and disables
+explicitly enables Steam, Lilypad, profile isolation, and titlebar, and disables
 interopdump and BepInEx. `[lilypad.report]` controls Lilypad's version-reporting
 subcomponent with its own `enable`; reporting requires both parent and child switches.
 Legacy top-level `[report]` is migrated on read, and an explicit nested report takes
@@ -73,12 +81,45 @@ PKCS#1 representation by `keyconv.rs`.
 prove a redirect occurred: Live requires an observed rewrite, and a platform failure
 remains visible even if a later API rewrite succeeds. The titlebar consumes this state.
 
-### Registry isolation
+### Profile isolation
 
-Registry hooks rewrite open/create/delete-key paths rather than emulating registry
-values. Matching is case-insensitive and segment-aware so similarly named product
-keys are unaffected. Windows retains responsibility for value types, enumeration,
-and persistence inside the redirected subtree.
+`[isolation]` has one `enable` switch and a `suffix` identifying the profile.
+The legacy `[regredirect]` table and loader-array entry remain readable. An
+explicit `[isolation]` table takes precedence; manager saves use only the new name.
+Suffixes accept 1-64 ASCII letters, digits, underscores, hyphens and interior
+single dots. Changing the suffix selects a different profile.
+
+The module redirects these roots to siblings with `.<suffix>.isolated` appended:
+
+- `HKCU\Software\wfs\HeavenBurnsRed` (Unity PlayerPrefs).
+- The OS LocalLow folder's `wfs/HeavenBurnsRed` directory, including all
+  DeltaComm database, transaction, lock and version files, settings and catalog data.
+- The OS LocalAppData folder's `GameLib` directory, including global SDK identity,
+  per-application authentication databases, SQLite sidecars and other SDK state.
+
+Native NT open/create/query/delete entry points resolve absolute and
+handle-relative object names. Directory enumeration and subsequent reads/writes
+use the redirected handles. Rename destinations are redirected and their parent
+directories pinned with reparse traversal disabled. Links cannot bridge profiles.
+All hooks are required: initialization errors or panics stop the process instead
+of allowing a partially isolated login. Unsupported or unsafe storage roots fail
+closed. This is application data separation, not a sandbox against hostile plugins,
+direct system calls, or external programs accessing the files.
+
+NT input names are counted by `Length`; `MaximumLength` may be zero in valid
+native calls. Named-pipe handles retain native IPC semantics, including empty
+handle-relative opens used by Steam. They are not filesystem profile roots.
+
+The new namespace deliberately does not reuse the old registry-only namespace.
+Official and legacy data are retained; no credentials, error flags or potentially
+mismatched saves are imported automatically. First use requires login/account
+transfer into the new profile. Changing paths or clearing `gglxuiderr` alone is
+not a migration of old mixed state. Disabling isolation uses the original roots.
+
+The Windows regression runs hooks in disposable child processes and checks two
+profiles against an unchanged official fixture, including relative registry
+opens, save transactions, file replacement, enumeration, deletion and link
+rejection. These checks do not replace real-game login and switching validation.
 
 ## Manager boundaries
 

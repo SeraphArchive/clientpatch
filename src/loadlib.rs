@@ -3,18 +3,155 @@
 //! `steam_api64`. A second GenericDetour on the same export would fail, so
 //! every watcher registers here.
 //!
-//! Callbacks run AFTER the original LoadLibrary returns (DllMain finished,
-//! loader lock dropped). They must not call LoadLibrary themselves.
+//! Notifications are delivered after the outermost LoadLibrary returns. Nested
+//! loads inside DllMain or callbacks never synchronously reenter a watcher.
+//! A LoadLibrary return inside another DLL's DllMain still owns the loader lock;
+//! those notifications are transferred to a worker before invoking any watcher.
 #![cfg(windows)]
 
 use crate::ffi::export;
 use crate::logging;
 use crate::wide;
 use retour::GenericDetour;
+use std::cell::{Cell, RefCell};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Mutex, OnceLock};
+use std::sync::{mpsc, Mutex, OnceLock};
 use windows_sys::Win32::Foundation::{GetLastError, SetLastError, HMODULE};
 use windows_sys::Win32::System::LibraryLoader::GetModuleHandleA;
+
+#[link(name = "ntdll")]
+extern "system" {
+    fn RtlIsThreadWithinLoaderCallout() -> u8;
+}
+
+struct Event {
+    name: String,
+    module: usize,
+}
+static DEFERRED: OnceLock<mpsc::Sender<Event>> = OnceLock::new();
+thread_local! {
+    static DEPTH: Cell<usize> = const { Cell::new(0) };
+    static DISPATCHING: Cell<bool> = const { Cell::new(false) };
+    static PENDING: RefCell<Vec<Event>> = const { RefCell::new(Vec::new()) };
+}
+
+struct LoadScope;
+impl LoadScope {
+    fn enter() -> Self {
+        DEPTH.with(|depth| depth.set(depth.get() + 1));
+        Self
+    }
+}
+impl Drop for LoadScope {
+    fn drop(&mut self) {
+        DEPTH.with(|depth| depth.set(depth.get() - 1));
+        crate::hook::no_panic_void(drain);
+    }
+}
+
+fn start_worker() {
+    DEFERRED.get_or_init(|| {
+        let (sender, receiver) = mpsc::channel::<Event>();
+        std::thread::Builder::new()
+            .name("native-load-notifications".into())
+            .spawn(move || {
+                while let Ok(event) = receiver.recv() {
+                    crate::hook::no_panic_void(|| {
+                        PENDING.with(|pending| pending.borrow_mut().push(event));
+                        drain();
+                    });
+                }
+            })
+            .expect("cannot start native loader notification worker");
+        sender
+    });
+}
+
+fn drain() {
+    if DEPTH.with(Cell::get) != 0 || DISPATCHING.with(Cell::get) {
+        return;
+    }
+    let events = PENDING.with(|pending| std::mem::take(&mut *pending.borrow_mut()));
+    if events.is_empty() {
+        return;
+    }
+    if unsafe { RtlIsThreadWithinLoaderCallout() } != 0 {
+        if let Some(sender) = DEFERRED.get() {
+            for event in events {
+                let _ = sender.send(event);
+            }
+        }
+        return;
+    }
+    DISPATCHING.with(|flag| flag.set(true));
+    struct DispatchGuard;
+    impl Drop for DispatchGuard {
+        fn drop(&mut self) {
+            DISPATCHING.with(|flag| flag.set(false));
+        }
+    }
+    let _guard = DispatchGuard;
+    let mut seen = Vec::new();
+    let mut batch = events;
+    loop {
+        for event in batch {
+            // W/ExW/A wrappers and loads performed by a watcher can describe the
+            // same DLL repeatedly. A watcher needs one notification per batch.
+            if seen.contains(&event.module) {
+                continue;
+            }
+            seen.push(event.module);
+            deliver(event);
+        }
+        batch = PENDING.with(|pending| std::mem::take(&mut *pending.borrow_mut()));
+        if batch.is_empty() {
+            break;
+        }
+    }
+}
+
+fn deliver(event: Event) {
+    use windows_sys::Win32::System::LibraryLoader::{
+        GetModuleFileNameW, GetModuleHandleExW, GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+    };
+    // A DLL loaded and freed inside DllMain may be gone by worker delivery.
+    // Pin and validate it outside loader callouts before dereferencing exports.
+    let mut module = core::ptr::null_mut();
+    unsafe {
+        if GetModuleHandleExW(
+            GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
+            event.module as *const u16,
+            &mut module,
+        ) == 0
+        {
+            return;
+        }
+    }
+    struct Pin(HMODULE);
+    impl Drop for Pin {
+        fn drop(&mut self) {
+            unsafe {
+                windows_sys::Win32::Foundation::FreeLibrary(self.0);
+            }
+        }
+    }
+    let _pin = Pin(module);
+    let mut path = [0u16; 32768];
+    let count =
+        unsafe { GetModuleFileNameW(module, path.as_mut_ptr(), path.len() as u32) } as usize;
+    if count == 0 || count >= path.len() {
+        return;
+    }
+    let actual = String::from_utf16_lossy(&path[..count]).to_ascii_lowercase();
+    let requested = event.name.rsplit(['\\', '/']).next().unwrap_or("");
+    if !path_contains(&actual, requested.trim_end_matches(".dll")) {
+        return;
+    }
+    let hooks: Vec<PostHook> = POST.lock().unwrap_or_else(|e| e.into_inner()).clone();
+    for hook in hooks {
+        hook(&actual, module);
+    }
+}
 
 type LoadLibraryWFn = unsafe extern "system" fn(*const u16) -> HMODULE;
 type LoadLibraryExWFn =
@@ -52,8 +189,10 @@ pub fn install() {
     if ARMED.swap(true, Ordering::SeqCst) {
         return;
     }
+    start_worker();
     for dll in ["kernelbase.dll", "kernel32.dll"] {
-        let h = unsafe { GetModuleHandleA(std::ffi::CString::new(dll).unwrap().as_ptr() as *const u8) };
+        let h =
+            unsafe { GetModuleHandleA(std::ffi::CString::new(dll).unwrap().as_ptr() as *const u8) };
         if h.is_null() {
             continue;
         }
@@ -100,10 +239,12 @@ fn notify(name: &str, h: HMODULE) {
     if h.is_null() || name.is_empty() {
         return;
     }
-    let hooks: Vec<PostHook> = POST.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    for hook in hooks {
-        hook(name, h);
-    }
+    PENDING.with(|pending| {
+        pending.borrow_mut().push(Event {
+            name: name.to_string(),
+            module: h as usize,
+        })
+    });
 }
 
 fn name_wide(p: *const u16) -> String {
@@ -126,9 +267,11 @@ unsafe extern "system" fn load_w(name: *const u16) -> HMODULE {
     let Some(d) = LOAD_W.get() else {
         return core::ptr::null_mut();
     };
+    let scope = LoadScope::enter();
     let h = d.call(name);
     let error = GetLastError();
     crate::hook::no_panic_void(|| notify(&name_wide(name), h));
+    drop(scope);
     SetLastError(error);
     h
 }
@@ -141,12 +284,14 @@ unsafe extern "system" fn load_ex_w(
     let Some(d) = LOAD_EX_W.get() else {
         return core::ptr::null_mut();
     };
+    let scope = LoadScope::enter();
     let h = d.call(name, file, flags);
     let error = GetLastError();
     // Skip LOAD_LIBRARY_AS_DATAFILE / AS_IMAGE_RESOURCE / AS_DATAFILE_EXCLUSIVE.
     if flags & 0x62 == 0 {
         crate::hook::no_panic_void(|| notify(&name_wide(name), h));
     }
+    drop(scope);
     SetLastError(error);
     h
 }
@@ -155,9 +300,11 @@ unsafe extern "system" fn load_a(name: *const u8) -> HMODULE {
     let Some(d) = LOAD_A.get() else {
         return core::ptr::null_mut();
     };
+    let scope = LoadScope::enter();
     let h = d.call(name);
     let error = GetLastError();
     crate::hook::no_panic_void(|| notify(&name_ansi(name), h));
+    drop(scope);
     SetLastError(error);
     h
 }
@@ -170,11 +317,13 @@ unsafe extern "system" fn load_ex_a(
     let Some(d) = LOAD_EX_A.get() else {
         return core::ptr::null_mut();
     };
+    let scope = LoadScope::enter();
     let h = d.call(name, file, flags);
     let error = GetLastError();
     if flags & 0x62 == 0 {
         crate::hook::no_panic_void(|| notify(&name_ansi(name), h));
     }
+    drop(scope);
     SetLastError(error);
     h
 }
@@ -190,6 +339,73 @@ pub fn path_contains(path: &str, needle: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::path_contains;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Mutex;
+
+    static CALLBACK_LOCK: Mutex<()> = Mutex::new(());
+    static REENTERED: AtomicBool = AtomicBool::new(false);
+
+    fn reentrant_callback(name: &str, _: windows_sys::Win32::Foundation::HMODULE) {
+        if !path_contains(name, "kernel32") {
+            return;
+        }
+        let _guard = CALLBACK_LOCK.lock().unwrap();
+        if !REENTERED.swap(true, Ordering::SeqCst) {
+            // A watcher calls native DLL code (e.g. PAYMENT_IsInitialized),
+            // which may itself resolve/load a DLL. The watcher owns its lock.
+            unsafe {
+                let module = windows_sys::Win32::System::LibraryLoader::LoadLibraryW(
+                    crate::wide::to_wide_nul("kernel32.dll").as_ptr(),
+                );
+                assert!(!module.is_null());
+                windows_sys::Win32::Foundation::FreeLibrary(module);
+            }
+        }
+    }
+
+    #[test]
+    fn native_loader_reentry_probe() {
+        if std::env::var_os("CLIENTPATCH_LOADER_REENTRY_PROBE").is_none() {
+            return;
+        }
+        super::add_post(reentrant_callback);
+        unsafe {
+            let module = windows_sys::Win32::System::LibraryLoader::LoadLibraryW(
+                crate::wide::to_wide_nul("kernel32.dll").as_ptr(),
+            );
+            assert!(!module.is_null());
+            windows_sys::Win32::Foundation::FreeLibrary(module);
+        }
+        assert!(REENTERED.load(Ordering::SeqCst));
+    }
+
+    #[test]
+    fn native_loader_reentry_finishes() {
+        let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "--exact",
+                "loadlib::tests::native_loader_reentry_probe",
+                "--nocapture",
+            ])
+            .env("CLIENTPATCH_LOADER_REENTRY_PROBE", "1")
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap();
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
+        loop {
+            if let Some(status) = child.try_wait().unwrap() {
+                assert!(status.success(), "loader probe failed: {status}");
+                return;
+            }
+            if std::time::Instant::now() >= deadline {
+                child.kill().unwrap();
+                child.wait().unwrap();
+                panic!("LoadLibraryW deadlocked while a watcher reentered the native loader");
+            }
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
 
     #[test]
     fn matches_basename_and_full_path() {

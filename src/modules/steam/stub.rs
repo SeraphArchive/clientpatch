@@ -27,6 +27,11 @@ unsafe impl Sync for Cb {}
 static CALLBACKS: Mutex<Vec<(Cb, i32)>> = Mutex::new(Vec::new());
 static UNKNOWN: Mutex<Vec<Vec<u8>>> = Mutex::new(Vec::new());
 
+#[repr(C)]
+struct TicketResp { handle: u32, eresult: i32 }
+static PENDING_TICKETS: Mutex<Vec<TicketResp>> = Mutex::new(Vec::new());
+static PUMPING_CALLBACKS: AtomicBool = AtomicBool::new(false);
+
 const TICKET: [u8; 64] = [0xA5; 64];
 
 pub fn configure(ip_country: &str, ui_language: &str) {
@@ -80,6 +85,7 @@ pub unsafe extern "C" fn SteamAPI_InitSafe() -> u8 {
 
 pub unsafe extern "C" fn SteamAPI_Shutdown() {
     INITED.store(false, Ordering::SeqCst);
+    PENDING_TICKETS.lock().unwrap_or_else(|e| e.into_inner()).clear();
 }
 
 pub unsafe extern "C" fn SteamAPI_RestartAppIfNecessary(_appid: u32) -> u8 {
@@ -107,17 +113,31 @@ pub unsafe extern "C" fn SteamAPI_ReleaseCurrentThreadMemory() {}
 pub unsafe extern "C" fn SteamAPI_SetWarningMessageHook(_f: *mut core::ffi::c_void) {}
 
 pub unsafe extern "C" fn SteamAPI_RunCallbacks() {
-    // Ticket callback is delivered synchronously from GetAuthSessionTicket.
+    if PUMPING_CALLBACKS.swap(true, Ordering::SeqCst) { return; }
+    struct PumpGuard;
+    impl Drop for PumpGuard {
+        fn drop(&mut self) { PUMPING_CALLBACKS.store(false, Ordering::SeqCst); }
+    }
+    let _guard = PumpGuard;
+    // Own payloads until dispatch. Never hold a queue/registration lock while
+    // invoking client code. Requests made by a callback wait for the next pump.
+    let pending = std::mem::take(&mut *PENDING_TICKETS.lock().unwrap_or_else(|e| e.into_inner()));
+    for mut response in pending {
+        let delivered = fire(163, (&mut response as *mut TicketResp).cast());
+        logging::line("STEAM", &format!("stub: RunCallbacks dispatched ticket response to {delivered} listener(s)"));
+    }
 }
 
 // --- callbacks -----------------------------------------------------------
 
-// CCallbackBase is an IL2CPP object here (dump.cs): object header, then
-// m_vfptr at 0x10, m_nCallbackFlags at 0x18, m_iCallback at 0x1C. The native
-// C layout (flags at +8, id at +12) lands inside the object header.
-const CB_VFPTR: usize = 0x10;
-const CB_FLAGS: usize = 0x18;
-const CB_ID: usize = 0x1C;
+// SteamAPI receives the native CCallbackBase payload, NOT an IL2CPP object
+// header. GameLib passes embedded CCallbackManual objects directly; managed
+// callers marshal/pin the native payload at the same ABI boundary. On Windows
+// x64, fields at +16/+24 belong to the derived callback (owner/code pointer).
+// Using dump.cs managed offsets here overwrites that member-function pointer.
+const CB_VFPTR: usize = 0;
+const CB_FLAGS: usize = 8;
+const CB_ID: usize = 12;
 
 pub unsafe extern "C" fn SteamAPI_RegisterCallback(cb: *mut u8, i_callback: i32) {
     if cb.is_null() {
@@ -146,7 +166,8 @@ pub unsafe extern "C" fn SteamAPI_RegisterCallResult(_cb: *mut u8, _call: u64) {
 
 pub unsafe extern "C" fn SteamAPI_UnregisterCallResult(_cb: *mut u8, _call: u64) {}
 
-unsafe fn fire(i_callback: i32, param: *mut core::ffi::c_void) {
+unsafe fn fire(i_callback: i32, param: *mut core::ffi::c_void) -> usize {
+    let mut delivered = 0;
     let list: Vec<(Cb, i32)> = CALLBACKS
         .lock()
         .unwrap_or_else(|e| e.into_inner())
@@ -155,9 +176,14 @@ unsafe fn fire(i_callback: i32, param: *mut core::ffi::c_void) {
         if id != i_callback || p.0.is_null() {
             continue;
         }
-        // m_vfptr points at CCallbackBaseVTable, whose first field is
-        // m_RunCallResult (4 args). The callback dispatcher is m_RunCallback,
-        // the second slot. Slot 0 would call it with two garbage arguments.
+        // An earlier callback may have unregistered a later callback in this
+        // snapshot. Do not dereference that potentially released object.
+        if !CALLBACKS.lock().unwrap_or_else(|e| e.into_inner()).iter()
+            .any(|(current, current_id)| current.0 == p.0 && *current_id == id) {
+            continue;
+        }
+        // Windows MSVC CCallbackManual and the marshalled Steamworks.NET
+        // table both place RunCallResult first and RunCallback second.
         let vtable = *(p.0.add(CB_VFPTR) as *const *const usize);
         if vtable.is_null() {
             continue;
@@ -165,7 +191,9 @@ unsafe fn fire(i_callback: i32, param: *mut core::ffi::c_void) {
         let run: unsafe extern "C" fn(*mut u8, *mut core::ffi::c_void) =
             core::mem::transmute(*vtable.add(1));
         run(p.0, param);
+        delivered += 1;
     }
+    delivered
 }
 
 // --- SteamInternal -------------------------------------------------------
@@ -336,19 +364,16 @@ unsafe extern "C" fn user_get_auth_session_ticket(
     if !pcb.is_null() {
         *pcb = n as u32;
     }
-    #[repr(C)]
-    struct TicketResp {
-        handle: u32,
-        eresult: i32,
-    }
-    let mut resp = TicketResp {
+    let resp = TicketResp {
         handle: TICKET_HANDLE,
         eresult: ERESULT_OK,
     };
-    fire(163, &mut resp as *mut TicketResp as *mut core::ffi::c_void);
+    // SteamStore arms its wait AFTER this call returns, clearing its completion
+    // flag then. Inline dispatch is lost and causes a long authentication wait.
+    PENDING_TICKETS.lock().unwrap_or_else(|e| e.into_inner()).push(resp);
     logging::line(
         "STEAM",
-        &format!("stub: GetAuthSessionTicket {n} bytes, callback 163"),
+        &format!("stub: GetAuthSessionTicket {n} bytes, callback 163 queued"),
     );
     TICKET_HANDLE
 }
@@ -721,6 +746,115 @@ pub fn resolve(name: &[u8]) -> Option<*const core::ffi::c_void> {
 #[cfg(test)]
 mod tests {
     use super::iface_for_version;
+    static CALLBACK_TEST: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    #[test]
+    fn ticket_completion_survives_native_wait_flag_reset() {
+        let _serial = CALLBACK_TEST.lock().unwrap_or_else(|e| e.into_inner());
+        #[repr(C)]
+        struct Callback { table: *const usize, flags: u8, pad: [u8; 3], id: i32, owner: *mut bool }
+        unsafe extern "C" fn run(this: *mut u8, _: *mut core::ffi::c_void) {
+            *(*(this as *const Callback)).owner = true;
+        }
+        let table = [0, run as *const () as usize, 0];
+        let mut completed = false;
+        let mut callback = Callback { table: table.as_ptr(), flags: 0, pad: [0; 3], id: 0, owner: &mut completed };
+        unsafe {
+            let pointer = (&mut callback as *mut Callback).cast();
+            super::SteamAPI_RegisterCallback(pointer, 163);
+            let mut ticket = [0; 64];
+            let mut size = 0;
+            super::SteamAPI_ISteamUser_GetAuthSessionTicket(
+                iface_for_version("SteamUser020"), ticket.as_mut_ptr(), 64, &mut size);
+            let delivered_inline = completed;
+            // Native SteamStore::authorize calls its wait helper AFTER asking
+            // for the ticket. That helper clears completion before polling.
+            completed = false;
+            super::SteamAPI_RunCallbacks();
+            let first_completed = completed;
+            completed = false;
+            super::SteamAPI_ISteamUser_GetAuthSessionTicket(
+                iface_for_version("SteamUser020"), ticket.as_mut_ptr(), 64, &mut size);
+            super::SteamAPI_Shutdown();
+            super::SteamAPI_RunCallbacks();
+            super::SteamAPI_UnregisterCallback(pointer);
+            assert!(!delivered_inline, "ticket callback ran before the native wait was armed");
+            assert!(first_completed, "native wait lost the ticket completion");
+            assert!(!completed, "shutdown left a stale ticket completion queued");
+        }
+    }
+
+    #[test]
+    fn native_callback_registration_preserves_owner_and_dispatch_target() {
+        let _serial = CALLBACK_TEST.lock().unwrap_or_else(|e| e.into_inner());
+        // Windows x64 CCallbackManual<SteamStore, GetAuthSessionTicketResponse_t>:
+        // vtable +0, flags +8, ID +12, owner +16, member-function pointer +24.
+        // The latter two fields must never be overwritten by registration.
+        #[repr(C)]
+        struct NativeCallback {
+            vtable: *const usize,
+            flags: u8,
+            padding: [u8; 3],
+            id: i32,
+            owner: *mut Observation,
+            method: usize,
+        }
+        struct Observation { calls: usize, handle: u32, result: i32 }
+        unsafe extern "C" fn run(this: *mut u8, param: *mut core::ffi::c_void) {
+            let callback = &*(this as *const NativeCallback);
+            let observation = &mut *callback.owner;
+            let response = param.cast::<u32>();
+            observation.calls += 1;
+            observation.handle = *response;
+            observation.result = *response.add(1) as i32;
+        }
+        let table = [0usize, run as *const () as usize, 0];
+        let mut observation = Observation { calls: 0, handle: 0, result: 0 };
+        let mut callback = NativeCallback {
+            vtable: table.as_ptr(), flags: 2, padding: [0xCC; 3], id: 0,
+            owner: &mut observation, method: run as *const () as usize,
+        };
+        let owner = callback.owner;
+        let method = callback.method;
+        let pointer = (&mut callback as *mut NativeCallback).cast::<u8>();
+        unsafe {
+            super::SteamAPI_RegisterCallback(pointer, 163);
+            // Unregister before assertions so even a failing test leaves no
+            // dangling callback pointer in the process-global registry.
+            let flags = callback.flags;
+            let id = callback.id;
+            let owner_after = callback.owner;
+            let method_after = callback.method;
+            super::SteamAPI_UnregisterCallback(pointer);
+            assert_eq!(flags, 3, "native flags must be written at +8");
+            assert_eq!(id, 163, "native callback ID must be written at +12");
+            assert_eq!(owner_after, owner);
+            assert_eq!(method_after, method, "registration corrupted the callback code pointer");
+            assert_eq!(callback.flags, 2);
+            assert_eq!(callback.padding, [0xCC; 3]);
+            super::SteamAPI_RegisterCallback(pointer, 163);
+            let mut ticket = [0u8; 64];
+            let mut length = 0;
+            let handle = super::SteamAPI_ISteamUser_GetAuthSessionTicket(
+                iface_for_version("SteamUser020"), ticket.as_mut_ptr(),
+                ticket.len() as i32, &mut length);
+            assert_eq!(observation.calls, 0);
+            super::SteamAPI_RunCallbacks();
+            super::SteamAPI_UnregisterCallback(pointer);
+            assert_eq!(handle, 1);
+            assert_eq!(length, 64);
+            assert_eq!(ticket, [0xA5; 64]);
+            super::SteamAPI_ISteamUser_GetAuthSessionTicket(
+                iface_for_version("SteamUser020"), ticket.as_mut_ptr(),
+                ticket.len() as i32, &mut length);
+            super::SteamAPI_RunCallbacks();
+        }
+        assert_eq!(observation.calls, 1);
+        assert_eq!(observation.handle, 1);
+        assert_eq!(observation.result, 1);
+        assert_eq!(callback.owner, owner);
+        assert_eq!(callback.method, method);
+    }
 
     #[test]
     fn routes_known_versions() {

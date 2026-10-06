@@ -85,6 +85,27 @@ promotion, and cleanup while a build is pending.
 
 ## Runtime verification
 
+Enable `[diagnostics]` with `enable = true` in the configuration file for native
+startup investigation. The manager has no diagnostics controls and preserves this
+section when saving other settings. Both `native_init` and `crash_context` default
+to true within the enabled section; the entire module defaults off.
+
+`native_init` records GameLib/Steam module bases through the shared loader watcher.
+In real Steam modes it observes `SteamAPI_Init` results/durations and
+`SteamAPI_Shutdown` calls through forwarding detours. It does not install these
+observers in stub mode or change their return values.
+With Lilypad's payment redirect hooks active, it also records payment initialization
+entry, return value, initialized state and elapsed time. Known error markers from
+the last 100 console rows are reported after initialization; raw console text is
+never logged. These markers may include earlier errors from the same launch.
+`crash_context` adds module-relative offsets and RIP/RSP/RAX/RCX to the existing
+unhandled-crash report. It does not attach a debugger, intercept recoverable
+exceptions, or collect a memory dump, credentials or request bodies.
+
+Module observation is delivered after DLL loading returns; a missing observation
+does not prove that loading failed. Initialization and crash logs supplement real
+game reproduction and do not replace a stack trace for deadlock attribution.
+
 Unit tests and successful compilation do not prove game compatibility or the GUI
 self-update handoff. For hook, bootstrap, Steam, or interop changes, validate against
 the intended game build and record which paths were exercised. Check manager setup,

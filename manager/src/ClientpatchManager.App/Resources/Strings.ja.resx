@@ -211,8 +211,11 @@
   <data name="secTitlebar" xml:space="preserve">
     <value>タイトルバー表示</value>
   </data>
-  <data name="secRedir" xml:space="preserve">
-    <value>レジストリ分離</value>
+  <data name="secIsolation" xml:space="preserve">
+    <value>データ分離</value>
+  </data>
+  <data name="isolationHelp" xml:space="preserve">
+    <value>ログイン情報、セーブデータ、ローカル設定を分離します。初回は再ログインまたはデータ引き継ぎが必要です。既存データは保持されます。</value>
   </data>
   <data name="plugTitle" xml:space="preserve">
     <value>BepInEx プラグイン</value>
