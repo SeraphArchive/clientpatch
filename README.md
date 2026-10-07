@@ -2,6 +2,11 @@
 
 A mod loader and manager for Heaven Burns Red, providing server redirection, profile isolation, BepInEx support and more.
 
+> ⚠️ Warning
+>
+> This project is in active development and experimental. Ensure you have configured valid takeover settings on your official account
+> and use at your own risk. Please report issues if you find any.
+
 ## Usage
 
 1. Download the ZIP from [Releases](https://github.com/SeraphArchive/clientpatch/releases)
