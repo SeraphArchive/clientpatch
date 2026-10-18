@@ -85,6 +85,12 @@
   <data name="homeTitle" xml:space="preserve">
     <value>首頁</value>
   </data>
+  <data name="officialServerWarningTitle" xml:space="preserve">
+    <value>警告：正在連線至官方伺服器</value>
+  </data>
+  <data name="officialServerWarningMessage" xml:space="preserve">
+    <value>目前設定將連線至官方伺服器。在連線至官方伺服器時使用 clientpatch，可能違反遊戲的終端使用者授權合約（EULA）。</value>
+  </data>
   <data name="stGame" xml:space="preserve">
     <value>遊戲</value>
   </data>

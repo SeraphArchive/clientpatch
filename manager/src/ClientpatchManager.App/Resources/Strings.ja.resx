@@ -85,6 +85,12 @@
   <data name="homeTitle" xml:space="preserve">
     <value>ホーム</value>
   </data>
+  <data name="officialServerWarningTitle" xml:space="preserve">
+    <value>警告：公式サーバーへの接続</value>
+  </data>
+  <data name="officialServerWarningMessage" xml:space="preserve">
+    <value>現在の設定では公式サーバーに接続します。公式サーバーへの接続中に clientpatch を使用すると、ゲームのエンドユーザー使用許諾契約（EULA）に違反する可能性があります。</value>
+  </data>
   <data name="stGame" xml:space="preserve">
     <value>ゲーム</value>
   </data>

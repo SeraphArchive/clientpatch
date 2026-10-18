@@ -45,6 +45,7 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
                 "WARN",
                 &format!("config not loaded ({e}); loading no modules"),
             );
+            logging::line("WARN", crate::config::OFFICIAL_SERVER_WARNING);
             return 0;
         }
     };
@@ -61,6 +62,9 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
         logging::init(&data, &log_name);
         crate::crashguard::install();
         logging::line("INFO", "clientpatch starting");
+        if cfg.uses_official_servers() {
+            logging::line("WARN", crate::config::OFFICIAL_SERVER_WARNING);
+        }
     }
 
     // Isolation precedes slow payload/interop checks and every server hook.

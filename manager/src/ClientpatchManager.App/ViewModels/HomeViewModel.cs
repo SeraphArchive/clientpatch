@@ -55,6 +55,7 @@ public sealed partial class HomeViewModel : LocalizedViewModel
     [NotifyPropertyChangedFor(nameof(HasLaunchError))]
     private string? _launchError;
     [ObservableProperty] private bool _isBusy;
+    [ObservableProperty] private bool _showOfficialServerWarning;
 
     /// <summary>True when a launch error message is present (drives the InfoBar).</summary>
     public bool HasLaunchError => !string.IsNullOrEmpty(LaunchError);
@@ -123,6 +124,7 @@ public sealed partial class HomeViewModel : LocalizedViewModel
 
         if (!_hasGameDir)
         {
+            ShowOfficialServerWarning = false;
             _state = DeploymentState.NotFound;
             _deployedVersion = null;
             _buildIdValue = null;
@@ -140,8 +142,12 @@ public sealed partial class HomeViewModel : LocalizedViewModel
             return _detector.Detect(dir!);
         });
         var cfg = await Task.Run(() => TryLoadConfig(install.ConfigPath));
-        if (generation != _refreshGeneration)
+        if (generation != _refreshGeneration || dir != _settings.Current.GameDir)
             return;
+
+        // Missing/invalid config also leaves the loader's redirect module disabled.
+        // Surface the warning before the slower interop and reachability checks.
+        ShowOfficialServerWarning = cfg?.UsesOfficialServers ?? install.State != DeploymentState.NotFound;
 
         var buildId = await Task.Run(() =>
         {

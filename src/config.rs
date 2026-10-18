@@ -2,6 +2,8 @@
 use serde::Deserialize;
 use std::path::Path;
 
+pub const OFFICIAL_SERVER_WARNING: &str = "!!! OFFICIAL SERVER WARNING !!! Using clientpatch while connecting to official servers may violate the game's EULA.";
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -303,6 +305,15 @@ fn default_max_restarts() -> u32 {
 }
 
 impl Config {
+    /// Configuration-based warning, independent of redirect hook initialization.
+    pub fn uses_official_servers(&self) -> bool {
+        self.lilypad.as_ref().is_none_or(|lp| {
+            !lp.enable
+                || has_official_host(&lp.api_base, "heaven-burns-red.wfs.games")
+                || has_official_host(&lp.platform_base, "gree-apps.net")
+        })
+    }
+
     pub fn version_report_enabled(&self) -> bool {
         self.lilypad
             .as_ref()
@@ -423,6 +434,25 @@ impl Config {
     }
 }
 
+/// Match the HTTP(S) authority's DNS host, never a path, query, or userinfo.
+fn has_official_host(base: &str, suffix: &str) -> bool {
+    let Some((scheme, rest)) = base.trim().split_once("://") else {
+        return false;
+    };
+    if !scheme.eq_ignore_ascii_case("http") && !scheme.eq_ignore_ascii_case("https") {
+        return false;
+    }
+    let authority = rest.split(['/', '?', '#']).next().unwrap_or_default();
+    let host_port = authority.rsplit('@').next().unwrap_or_default();
+    let host = host_port
+        .split(':')
+        .next()
+        .unwrap_or_default()
+        .trim_end_matches('.')
+        .to_ascii_lowercase();
+    host == suffix || host.ends_with(&format!(".{suffix}"))
+}
+
 /// Read legacy switches once; runtime activation uses only each section's enable.
 fn normalize_enable(value: &mut toml::Value) -> anyhow::Result<()> {
     let root = value
@@ -520,6 +550,50 @@ fn normalize_enable(value: &mut toml::Value) -> anyhow::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn official_server_warning_when_lilypad_is_missing_or_disabled() {
+        for text in ["", "[lilypad]\nenable=false", "[lilypad]", "[lilypad]\nenabled=false"] {
+            assert!(Config::parse(text).unwrap().uses_official_servers());
+        }
+        assert!(!Config::parse(NOOP).unwrap().uses_official_servers());
+    }
+
+    #[test]
+    fn official_server_warning_matches_either_endpoint_host() {
+        for (key, base) in [
+            ("api_base", "https://heaven-burns-red.wfs.games/"),
+            ("api_base", "https://api-ap.heaven-burns-red.wfs.games/api/"),
+            ("api_base", " HTTPS://API.HEAVEN-BURNS-RED.WFS.GAMES.:443/?x=1 "),
+            ("api_base", "https://user:pass@api.heaven-burns-red.wfs.games/"),
+            ("platform_base", "https://gree-apps.net/"),
+            ("platform_base", "https://gl-payment.jp.gree-apps.net:443/#fragment"),
+            ("platform_base", " HTTPS://GL-PAYMENT.GREE-APPS.NET./ "),
+        ] {
+            let text = "[lilypad]\nenable=true\napi_base='http://localhost/'\nplatform_base='http://localhost/'\n";
+            let text = text.replace(&format!("{key}='http://localhost/'"), &format!("{key}='{base}'"));
+            assert!(Config::parse(&text).unwrap().uses_official_servers(), "{key}: {base}");
+        }
+    }
+
+    #[test]
+    fn official_server_warning_rejects_lookalikes_and_non_host_text() {
+        for base in [
+            "https://api.heaven-burns-red.wfs.games.example.org/",
+            "https://notheaven-burns-red.wfs.games/",
+            "https://notgree-apps.net/",
+            "https://gree-apps.net.example.org/",
+            "https://example.org/heaven-burns-red.wfs.games",
+            "https://example.org/?host=gree-apps.net",
+            "https://api.heaven-burns-red.wfs.games@example.org/",
+            "https://gree-apps.net@example.org/",
+            "http://127.0.0.1:8443/",
+            "http://[::1]:8443/",
+        ] {
+            let text = format!("[lilypad]\nenable=true\napi_base='{base}'\nplatform_base='{base}'");
+            assert!(!Config::parse(&text).unwrap().uses_official_servers(), "{base}");
+        }
+    }
 
     const NOOP: &str = r#"
 [loader]

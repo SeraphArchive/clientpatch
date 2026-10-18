@@ -85,6 +85,12 @@
   <data name="homeTitle" xml:space="preserve">
     <value>主页</value>
   </data>
+  <data name="officialServerWarningTitle" xml:space="preserve">
+    <value>警告：正在连接官方服务器</value>
+  </data>
+  <data name="officialServerWarningMessage" xml:space="preserve">
+    <value>当前配置将连接官方服务器。在连接官方服务器时使用 clientpatch，可能违反游戏的最终用户许可协议（EULA）。</value>
+  </data>
   <data name="stGame" xml:space="preserve">
     <value>游戏</value>
   </data>

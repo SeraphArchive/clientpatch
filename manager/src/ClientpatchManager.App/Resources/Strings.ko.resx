@@ -85,6 +85,12 @@
   <data name="homeTitle" xml:space="preserve">
     <value>홈</value>
   </data>
+  <data name="officialServerWarningTitle" xml:space="preserve">
+    <value>경고: 공식 서버 연결</value>
+  </data>
+  <data name="officialServerWarningMessage" xml:space="preserve">
+    <value>현재 설정은 공식 서버에 연결합니다. 공식 서버에 연결한 상태에서 clientpatch를 사용하면 게임의 최종 사용자 사용권 계약(EULA)을 위반할 수 있습니다.</value>
+  </data>
   <data name="stGame" xml:space="preserve">
     <value>게임</value>
   </data>

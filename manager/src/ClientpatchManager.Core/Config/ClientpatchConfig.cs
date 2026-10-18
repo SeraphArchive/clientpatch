@@ -11,6 +11,19 @@ public class ClientpatchConfig {
     public BepInExSection? BepInEx { get; set; }
     public InteropDumpSection? InteropDump { get; set; }
 
+    /// <summary>Warn if redirection is off or either endpoint targets an official DNS domain.</summary>
+    public bool UsesOfficialServers => !Lilypad.Enabled
+        || HasOfficialHost(Lilypad.ApiBase, "heaven-burns-red.wfs.games")
+        || HasOfficialHost(Lilypad.PlatformBase, "gree-apps.net");
+
+    static bool HasOfficialHost(string endpoint, string suffix) {
+        if (!Uri.TryCreate(endpoint.Trim(), UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)) return false;
+        var host = uri.Host.TrimEnd('.');
+        return host.Equals(suffix, StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith("." + suffix, StringComparison.OrdinalIgnoreCase);
+    }
+
     public bool IsEnabled(string section) => section switch {
         "lilypad" => Lilypad.Enabled, "steam" => Steam.Enabled,
         "isolation" => Isolation.Enabled, "titlebar" => Titlebar.Enabled,

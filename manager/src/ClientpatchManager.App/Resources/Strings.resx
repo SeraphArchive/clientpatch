@@ -85,6 +85,12 @@
   <data name="homeTitle" xml:space="preserve">
     <value>Home</value>
   </data>
+  <data name="officialServerWarningTitle" xml:space="preserve">
+    <value>Warning: official servers</value>
+  </data>
+  <data name="officialServerWarningMessage" xml:space="preserve">
+    <value>Your configuration connects to official servers. Using clientpatch while connecting to official servers may violate the game's EULA.</value>
+  </data>
   <data name="stGame" xml:space="preserve">
     <value>Game</value>
   </data>

@@ -12,6 +12,10 @@
 
     <ScrollViewer Padding="32,28" VerticalScrollBarVisibility="Auto">
         <StackPanel>
+            <ui:InfoBar Severity="Warning" IsOpen="{Binding ShowOfficialServerWarning}"
+                        IsClosable="False" Title="{Binding [officialServerWarningTitle]}"
+                        Message="{Binding [officialServerWarningMessage]}" Margin="0,0,0,18" />
+
             <ui:TextBlock Text="{Binding [homeTitle]}" FontTypography="Title" Margin="0,0,0,22" />
 
             <!-- Status tiles -->
