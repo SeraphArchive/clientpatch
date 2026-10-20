@@ -23,6 +23,9 @@ pub unsafe extern "system" fn init_thread(param: *mut core::ffi::c_void) -> u32 
 }
 
 unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
+    // Releases even on config errors, helper returns, and caught panics. The
+    // game waits only at its GameAssembly load, outside the native loader lock.
+    let early_pass = crate::startup_gate::EarlyPass::begin();
     let helper = crate::entry::is_helper_process();
     let dir = dll_dir().unwrap_or_else(|| PathBuf::from("."));
     // Everything clientpatch owns lives under <game dir>/clientpatch. The game
@@ -87,9 +90,9 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
     // need no IL2CPP, so run them now — long before the runtime-ready gate.
     //
     // After isolation, bepinex goes first: doorstop must
-    // be loaded before UnityPlayer resolves il2cpp_init (doorstop IAT-hooks
-    // that GetProcAddress call; miss the window and BepInEx never boots), so
-    // its early pass cannot wait behind the other modules' hook installs.
+    // be loaded before UnityPlayer resolves il2cpp_init. The startup IAT gate
+    // holds Unity's GameAssembly load while Doorstop and the native early hooks
+    // initialize; no scheduling-dependent sleep is needed.
     let modules = module::registry();
     for m in &modules {
         if m.name() == "bepinex" && cfg.module_enabled(m.name()) {
@@ -105,6 +108,7 @@ unsafe fn init_thread_inner(_param: *mut core::ffi::c_void) -> u32 {
             }
         }
     }
+    drop(early_pass);
 
     // Leak the runtime binding: module hooks dereference it for the whole
     // process, long after this thread returns.

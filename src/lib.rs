@@ -31,6 +31,8 @@ mod il2cpp;
 #[cfg(windows)]
 mod loadlib;
 #[cfg(windows)]
+mod startup_gate;
+#[cfg(windows)]
 mod version_proxy;
 
 #[cfg(windows)]
@@ -43,8 +45,8 @@ mod entry {
     use windows_sys::Win32::System::SystemServices::DLL_PROCESS_ATTACH;
     use windows_sys::Win32::System::Threading::CreateThread;
 
-    /// DLL entry. Per the loader-lock rule: only detach thread notifications and
-    /// spawn the init thread; never do heavy work here.
+    /// DLL entry. Arm the allocation-free Unity IAT gate and start the worker.
+    /// Never load DLLs, parse config, or wait for the worker under the loader lock.
     #[no_mangle]
     pub extern "system" fn DllMain(
         hinst: HMODULE,
@@ -56,6 +58,9 @@ mod entry {
                 DisableThreadLibraryCalls(hinst);
                 if !is_target_process() {
                     return TRUE;
+                }
+                if !is_helper_process() {
+                    super::startup_gate::arm();
                 }
                 let h = CreateThread(
                     core::ptr::null(),
@@ -69,6 +74,8 @@ mod entry {
                 // leaked for the process lifetime (the thread keeps running).
                 if !h.is_null() {
                     CloseHandle(h);
+                } else {
+                    super::startup_gate::release();
                 }
             }
         }

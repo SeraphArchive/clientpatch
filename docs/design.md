@@ -9,8 +9,9 @@ This document describes implementation boundaries; it is not a user manual.
 
 `src/lib.rs` gates initialization to the game process. Its CEF helpers load only
 the isolation module, so browser-side storage uses the same profile.
-`DllMain` disables thread notifications and starts a worker; configuration parsing,
-runtime discovery, and hook installation run outside the loader lock.
+`DllMain` disables thread notifications, arms an allocation-free IAT gate on
+UnityPlayer's LoadLibrary A/W/Ex imports, and starts a worker. Configuration parsing,
+runtime discovery, and module hook installation run outside the loader lock.
 `src/version_proxy.rs` exports the Windows version APIs and resolves the real DLL
 through the system directory obtained from Windows, avoiding a fixed installation path.
 
@@ -25,6 +26,18 @@ through the system directory obtained from Windows, avoiding a fixed installatio
    The IL2CPP early pass handles hooks that need to precede game initialization.
 3. The main pass installs runtime-dependent modules after the readiness gates.
    BepInEx runs last here because setup can generate interop and restart the game.
+
+The startup gate holds only executable GameAssembly loads, before entering the
+Windows loader, until the native early pass finishes. It leaves Doorstop's
+GetProcAddress import available for Doorstop's own IAT hook and verifies that
+the resolver points into the loaded Doorstop module before reporting success.
+This confirms the native hook is armed; it does not prove managed plugins ran.
+Disabled/missing configuration, initialization errors and panics release the gate.
+A 120-second timeout releases it with an error; calls from loader callouts bypass
+waiting and invalidate the ordering proof to avoid a loader-lock deadlock. CEF
+helpers do not arm the gate. Release restores only imports still owned by the gate.
+If interop becomes current during the late pass, setup requests a clean relaunch
+instead of loading Doorstop after the runtime's initialization lookup has passed.
 
 Native library watchers queue notifications until the outermost load returns.
 Loads triggered by watcher code cannot synchronously reenter a watcher, and

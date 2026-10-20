@@ -106,6 +106,22 @@ Module observation is delivered after DLL loading returns; a missing observation
 does not prove that loading failed. Initialization and crash logs supplement real
 game reproduction and do not replace a stack trace for deadlock attribution.
 
+For BepInEx startup, `Doorstop GetProcAddress hook verified before GameAssembly load`
+confirms Unity's native resolver was taken over before the runtime loaded.
+`GameAssembly startup gate released after native early hooks` records an observed
+wait. Neither line proves the managed chainloader or plugins completed; inspect
+BepInEx's own log for that. Gate-unavailable, bypass and timeout errors must not
+be counted as successful injection.
+
+The Rust startup-gate regressions run native IAT/load probes in disposable child
+processes, including delayed workers, all four LoadLibrary variants, concurrent
+loads, unrelated/datafile loads, late injection rejection and timeout release.
+An additional ignored `startup_gate::tests::real_doorstop_arms_before_runtime_load`
+probe accepts `CLIENTPATCH_DOORSTOP_PROBE_DLL` pointing to a local Doorstop payload.
+It copies that DLL into an isolated fixture process and verifies its real IAT hook
+without starting the game or invoking CoreCLR. Game binaries and plugins are not
+included in these fixtures.
+
 Unit tests and successful compilation do not prove game compatibility or the GUI
 self-update handoff. For hook, bootstrap, Steam, or interop changes, validate against
 the intended game build and record which paths were exercised. Check manager setup,

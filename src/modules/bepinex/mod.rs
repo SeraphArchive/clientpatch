@@ -5,7 +5,7 @@
 //!
 //!   * `enable = false`                   → never loaded.
 //!   * enabled, interop current           → `LoadLibrary(doorstop.dll)` at
-//!     init_early (~30 ms) — same timing as a natural doorstop boot.
+//!     init_early, while Unity's GameAssembly load waits at the startup gate.
 //!   * enabled, interop outdated/unknown  → doorstop deferred; at main-init the
 //!     module drives a dump (or waits for the interopdump module's), then hands
 //!     generation to the manager. The manager shows progress, restarts the game,
@@ -365,8 +365,8 @@ mod worker {
         let status = interop_status(dll_dir, &cfg, config);
         match status {
             InteropStatus::Current => {
+                load_doorstop(dll_dir, &cfg)?;
                 clear_restart_counter(dll_dir, &cfg);
-                load_doorstop(dll_dir, &cfg);
                 if !bepinex_interop_dir(dll_dir, &cfg)
                     .join("assembly-hash.txt")
                     .is_file()
@@ -389,8 +389,8 @@ mod worker {
                     .ok_or_else(|| anyhow::anyhow!("setup mutex unavailable"))?;
                 // The other process may have finished setup while we waited.
                 if interop_status(dll_dir, &cfg, config) == InteropStatus::Current {
+                    load_doorstop(dll_dir, &cfg)?;
                     clear_restart_counter(dll_dir, &cfg);
-                    load_doorstop(dll_dir, &cfg);
                     return Ok(());
                 }
                 // Dump is current; only generation is missing. The manager generates,
@@ -431,8 +431,13 @@ mod worker {
             acquire_setup_guard().ok_or_else(|| anyhow::anyhow!("setup mutex unavailable"))?;
         // The other process may have completed setup while we waited.
         if interop_status(dll_dir, &cfg, ctx.config) == InteropStatus::Current {
-            clear_restart_counter(dll_dir, &cfg);
-            load_doorstop(dll_dir, &cfg);
+            // Runtime init has already finished. A late LoadLibrary cannot
+            // replay Unity's il2cpp_init lookup; use a clean launch instead.
+            if manager_exe(dll_dir, &cfg).is_some() {
+                handoff_to_manager(dll_dir, &cfg, ctx.config, SetupJob::Relaunch);
+            } else {
+                restart(dll_dir, &cfg, "bepinex: interop became current after startup; relaunching");
+            }
             return Ok(());
         }
 
@@ -549,26 +554,16 @@ mod worker {
 
     // ---- doorstop ----------------------------------------------------------
 
-    fn load_doorstop(dll_dir: &Path, cfg: &Bepinex) {
+    fn load_doorstop(dll_dir: &Path, cfg: &Bepinex) -> anyhow::Result<()> {
         use windows_sys::Win32::System::LibraryLoader::LoadLibraryW;
+        crate::startup_gate::before_doorstop()?;
         let path = dll_dir.join(&cfg.doorstop);
         let wide = crate::wide::to_wide_nul(&path.to_string_lossy());
         let h = unsafe { LoadLibraryW(wide.as_ptr()) };
-        if h.is_null() {
-            logging::line(
-                "ERR",
-                &format!(
-                    "bepinex: LoadLibrary({}) failed ({})",
-                    path.display(),
-                    std::io::Error::last_os_error()
-                ),
-            );
-        } else {
-            logging::line(
-                "INFO",
-                &format!("bepinex: doorstop loaded ({})", path.display()),
-            );
-        }
+        anyhow::ensure!(!h.is_null(), "bepinex: LoadLibrary({}) failed ({})", path.display(), std::io::Error::last_os_error());
+        crate::startup_gate::verify_doorstop(h)?;
+        logging::line("INFO", &format!("bepinex: Doorstop GetProcAddress hook verified before GameAssembly load ({})", path.display()));
+        Ok(())
     }
 
     // ---- generation --------------------------------------------------------
