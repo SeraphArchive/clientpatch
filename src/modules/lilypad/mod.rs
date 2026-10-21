@@ -10,6 +10,8 @@ pub mod platform;
 #[cfg(windows)]
 mod api_redirect;
 #[cfg(windows)]
+mod maintenance;
+#[cfg(windows)]
 mod migcapture;
 #[cfg(windows)]
 mod signing;
@@ -39,6 +41,11 @@ impl Module for Lilypad {
     }
 
     #[cfg(windows)]
+    fn init_il2cpp_early(&self, ctx: &LoaderCtx) -> anyhow::Result<()> {
+        maintenance::apply(ctx.il2cpp)
+    }
+
+    #[cfg(windows)]
     fn init(&self, ctx: &LoaderCtx) -> anyhow::Result<()> {
         let cfg = ctx
             .config
@@ -47,6 +54,7 @@ impl Module for Lilypad {
             .ok_or_else(|| anyhow::anyhow!("[lilypad] config table missing"))?;
         crate::logging::line("INFO", &format!("lilypad init: api_base={}", cfg.api_base));
 
+        maintenance::apply(ctx.il2cpp)?;
         api_redirect::apply(ctx.il2cpp, cfg)?;
         signing::apply(ctx.il2cpp, cfg, ctx.dll_dir)?;
         // platform::apply is armed in init_early (must beat PAYMENT_Initialize).

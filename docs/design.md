@@ -85,6 +85,13 @@ Generic method stubs are not treated as safe native detour targets.
 Requests receive the per-launch `x-lilypad-session` header used by the server's
 session protocol.
 
+With Lilypad enabled, the early IL2CPP pass hooks
+`GGLSequences.Prologue.InMaintenance` to discard the official CDN maintenance
+result at both prologue gates (before and after GameLib initialization). The
+original download still runs; download errors retain the client's existing
+handling. This does not supply Lilypad maintenance information or mark the
+redirect Live. The main pass retries installation idempotently.
+
 Native GameLib hooks rewrite the official gl-payment origin in platform configuration
 strings. They do not redirect unrelated payment origins. Signing hooks support the
 configured server mode; RSA public keys are converted to the client's expected
